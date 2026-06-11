@@ -5,10 +5,11 @@ import { type ChatInputActionsProps } from '@lobehub/editor/react';
 import { type MenuProps } from '@lobehub/ui';
 import { Alert, Flexbox } from '@lobehub/ui';
 import { type ReactNode } from 'react';
-import { memo, useCallback, useEffect, useRef } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { type ActionKeys } from '@/features/ChatInput';
+import { useBusinessChatInputSendAreaPrefix } from '@/business/client/hooks/useBusinessChatInputSendAreaPrefix';
+import type { ActionKeys, ChatInputFeature } from '@/features/ChatInput';
 import { ChatInputProvider, DesktopChatInput } from '@/features/ChatInput';
 import {
   type SendButtonHandler,
@@ -16,16 +17,12 @@ import {
 } from '@/features/ChatInput/store/initialState';
 import { useChatStore } from '@/store/chat';
 import { operationSelectors } from '@/store/chat/selectors';
+import { messageMapKey } from '@/store/chat/utils/messageMapKey';
 import { fileChatSelectors, useFileStore } from '@/store/file';
 
 import WideScreenContainer from '../../WideScreenContainer';
 import InterventionBar from '../InterventionBar';
-import {
-  dataSelectors,
-  messageStateSelectors,
-  useConversationStore,
-  useConversationStoreApi,
-} from '../store';
+import { dataSelectors, messageStateSelectors, useConversationStore } from '../store';
 import TodoProgress from '../TodoProgress';
 import QueueTray from './QueueTray';
 import { getConversationChatInputUiState } from './utils';
@@ -33,21 +30,13 @@ import { getConversationChatInputUiState } from './utils';
 /** Max recent messages to feed into auto-complete context (≈10 conversation turns) */
 const MAX_CONTEXT_MESSAGES = 25;
 
-const useGetMessages = () => {
-  const storeApi = useConversationStoreApi();
-  return useCallback(
-    () =>
-      dataSelectors
-        .dbMessages(storeApi.getState())
-        .filter((m) => m.role === 'user' || m.role === 'assistant' || m.role === 'tool')
-        .slice(-MAX_CONTEXT_MESSAGES)
-        .map((m) => ({
-          content: typeof m.content === 'string' ? m.content : '',
-          role: m.role as 'user' | 'assistant' | 'system',
-        })),
-    [storeApi],
-  );
-};
+const toChatInputMessages = (messages: ReturnType<typeof dataSelectors.dbMessages>) =>
+  messages
+    .filter((m) => m.role === 'user' || m.role === 'assistant' || m.role === 'tool')
+    .map((m) => ({
+      content: typeof m.content === 'string' ? m.content : '',
+      role: m.role as 'user' | 'assistant' | 'system',
+    }));
 
 export interface ChatInputProps {
   /**
@@ -64,27 +53,28 @@ export interface ChatInputProps {
    */
   children?: ReactNode;
   /**
+   * Custom node to render in place of the default ControlBar
+   * (Local/Cloud/Approval). When provided, replaces the default bar.
+   */
+  controlBarSlot?: ReactNode;
+  /**
    * Suppress the followUp placeholder variant (e.g. onboarding has no
    * follow-up design). When true, placeholder stays in default variant.
    */
   disableFollowUpVariant?: boolean;
-  /**
-   * Disable the @ mention trigger and its placeholder hint
-   */
-  disableMention?: boolean;
   /**
    * Disable enqueuing follow-up messages while the agent is streaming.
    * Hides the QueueTray and gates handleSend so Enter does not enqueue.
    */
   disableQueue?: boolean;
   /**
-   * Disable the / slash command trigger
-   */
-  disableSlash?: boolean;
-  /**
    * Extra action items to append to the ActionBar
    */
   extraActionItems?: ChatInputActionsProps['items'];
+  /**
+   * Chat input capability switches. Omitted capabilities keep the default enabled state.
+   */
+  feature?: ChatInputFeature;
   /**
    * Swap the action bar and send area for skeleton placeholders while
    * the underlying agent/session config is still hydrating. The editor
@@ -112,11 +102,6 @@ export interface ChatInputProps {
    */
   rightActions?: ActionKeys[];
   /**
-   * Custom node to render in place of the default RuntimeConfig bar
-   * (Local/Cloud/Approval). When provided, replaces the default bar.
-   */
-  runtimeConfigSlot?: ReactNode;
-  /**
    * Custom content to render before the SendArea (right side of action bar)
    */
   sendAreaPrefix?: ReactNode;
@@ -129,9 +114,9 @@ export interface ChatInputProps {
    */
   sendMenu?: MenuProps;
   /**
-   * Whether to show the runtime config bar (Local/Cloud/Auto Approve)
+   * Whether to show the control bar (Local/Cloud/Auto Approve)
    */
-  showRuntimeConfig?: boolean;
+  showControlBar?: boolean;
   /**
    * Remove a small margin when placed adjacent to the ChatList
    */
@@ -149,9 +134,8 @@ const ChatInput = memo<ChatInputProps>(
     actionBarStyle,
     allowExpand,
     disableFollowUpVariant,
-    disableMention,
     disableQueue,
-    disableSlash,
+    feature,
     leftActions = [],
     leftContent,
     rightActions = [],
@@ -159,20 +143,26 @@ const ChatInput = memo<ChatInputProps>(
     extraActionItems,
     isConfigLoading = false,
     mentionItems,
-    runtimeConfigSlot,
+    controlBarSlot,
     sendMenu,
     sendAreaPrefix,
     sendButtonProps: customSendButtonProps,
-    showRuntimeConfig = true,
+    showControlBar = true,
     onEditorReady,
     skipScrollMarginWithList,
   }) => {
     const { t } = useTranslation('chat');
 
-    const getMessages = useGetMessages();
+    const dbMessages = useConversationStore(dataSelectors.dbMessages);
+    const contextWindowMessages = useMemo(() => toChatInputMessages(dbMessages), [dbMessages]);
+    const getMessages = useCallback(
+      () => contextWindowMessages.slice(-MAX_CONTEXT_MESSAGES),
+      [contextWindowMessages],
+    );
 
     // ConversationStore state
     const context = useConversationStore((s) => s.context);
+    const draftKey = useMemo(() => messageMapKey(context), [context]);
     const [agentId, inputMessage, sendMessage, stopGenerating] = useConversationStore((s) => [
       s.context.agentId,
       s.inputMessage,
@@ -242,6 +232,7 @@ const ChatInput = memo<ChatInputProps>(
     // When disableQueue is set (e.g. onboarding), block sending while loading.
     const disabled = isInputEmpty || isUploadingFiles || (!!disableQueue && isInputLoading);
     const shouldUsePlainSendButton = !showSendMenu && !!sendMenu;
+    const businessSendAreaPrefix = useBusinessChatInputSendAreaPrefix(sendAreaPrefix);
 
     // Send handler - gets message, clears editor immediately, then sends
     const handleSend: SendButtonHandler = useCallback(
@@ -299,47 +290,47 @@ const ChatInput = memo<ChatInputProps>(
       <WideScreenContainer
         style={{ position: 'relative', ...(skipScrollMarginWithList ? { marginTop: -12 } : null) }}
       >
-        {hasPendingInterventions ? (
-          <InterventionBar interventions={pendingInterventions} />
-        ) : (
-          <>
-            {sendMessageErrorMsg && (
-              <Flexbox paddingBlock={'0 6px'} paddingInline={12}>
-                <Alert
-                  closable
-                  title={t('input.errorMsg', { errorMsg: sendMessageErrorMsg })}
-                  type={'secondary'}
-                  onClose={clearSendMessageError}
-                />
-              </Flexbox>
-            )}
-            <Flexbox
-              paddingInline={12}
-              ref={overlayRef}
-              style={{
-                bottom: '100%',
-                left: 12,
-                position: 'absolute',
-                right: 12,
-                zIndex: 10,
-              }}
-            >
-              {!disableQueue && hasQueuedMessages && <QueueTray />}
-              <TodoProgress topAttached={!disableQueue && hasQueuedMessages} />
+        {hasPendingInterventions && <InterventionBar interventions={pendingInterventions} />}
+        {/* Keep the chat input mounted while an intervention panel is showing —
+            unmounting would wipe the Lexical editor's in-memory document. */}
+        <div style={{ display: hasPendingInterventions ? 'none' : 'contents' }}>
+          {sendMessageErrorMsg && (
+            <Flexbox paddingBlock={'0 6px'} paddingInline={12}>
+              <Alert
+                closable
+                title={t('input.errorMsg', { errorMsg: sendMessageErrorMsg })}
+                type={'secondary'}
+                onClose={clearSendMessageError}
+              />
             </Flexbox>
-            <DesktopChatInput
-              actionBarStyle={actionBarStyle}
-              borderRadius={12}
-              extraActionItems={extraActionItems}
-              isConfigLoading={isConfigLoading}
-              leftContent={leftContent}
-              placeholderVariant={placeholderVariant}
-              runtimeConfigSlot={runtimeConfigSlot}
-              sendAreaPrefix={sendAreaPrefix}
-              showRuntimeConfig={showRuntimeConfig}
-            />
-          </>
-        )}
+          )}
+          <Flexbox
+            paddingInline={12}
+            ref={overlayRef}
+            style={{
+              bottom: '100%',
+              left: 12,
+              position: 'absolute',
+              right: 12,
+              zIndex: 10,
+            }}
+          >
+            {!disableQueue && hasQueuedMessages && <QueueTray />}
+            <TodoProgress topAttached={!disableQueue && hasQueuedMessages} />
+          </Flexbox>
+          <DesktopChatInput
+            actionBarStyle={actionBarStyle}
+            borderRadius={12}
+            controlBarSlot={controlBarSlot}
+            extraActionItems={extraActionItems}
+            hidden={hasPendingInterventions}
+            isConfigLoading={isConfigLoading}
+            leftContent={leftContent}
+            placeholderVariant={placeholderVariant}
+            sendAreaPrefix={businessSendAreaPrefix}
+            showControlBar={showControlBar}
+          />
+        </div>
       </WideScreenContainer>
     );
 
@@ -347,8 +338,9 @@ const ChatInput = memo<ChatInputProps>(
       <ChatInputProvider
         agentId={agentId}
         allowExpand={allowExpand}
-        disableMention={disableMention}
-        disableSlash={disableSlash}
+        contextWindowMessages={contextWindowMessages}
+        draftKey={draftKey}
+        feature={feature}
         getMessages={getMessages}
         leftActions={leftActions}
         mentionItems={mentionItems}

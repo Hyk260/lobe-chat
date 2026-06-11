@@ -9,13 +9,11 @@ import isEqual from 'fast-deep-equal';
 import { Loader2Icon } from 'lucide-react';
 import { memo, useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import useSWR from 'swr';
 
 import { FORM_STYLE } from '@/const/layoutTokens';
 import SettingHeader from '@/routes/(main)/settings/features/SettingHeader';
 import { autoUpdateService } from '@/services/electron/autoUpdate';
-import { messengerService } from '@/services/messenger';
-import { featureFlagsSelectors, useServerConfigStore } from '@/store/serverConfig';
+import { useServerConfigStore } from '@/store/serverConfig';
 import { useUserStore } from '@/store/user';
 import { labPreferSelectors, preferenceSelectors, settingsSelectors } from '@/store/user/selectors';
 
@@ -39,29 +37,23 @@ const Page = memo(() => {
 
   const [
     isPreferenceInit,
-    enableAgentSelfIteration,
+    enableAgentDocumentFloatingChatPanel,
     enableInputMarkdown,
     enableGatewayMode,
-    enableMessenger,
+    enablePlatformAgent,
+    enableImessage,
     updateLab,
   ] = useUserStore((s) => [
     preferenceSelectors.isPreferenceInit(s),
-    labPreferSelectors.enableAgentSelfIteration(s),
+    labPreferSelectors.enableAgentDocumentFloatingChatPanel(s),
     labPreferSelectors.enableInputMarkdown(s),
     labPreferSelectors.enableGatewayMode(s),
-    labPreferSelectors.enableMessenger(s),
+    labPreferSelectors.enablePlatformAgent(s),
+    labPreferSelectors.enableImessage(s),
     s.updateLab,
   ]);
 
-  const { enableAgentSelfIteration: canShowAgentSelfIterationLab } =
-    useServerConfigStore(featureFlagsSelectors);
   const hasGatewayUrl = useServerConfigStore((s) => !!s.serverConfig.agentGatewayUrl);
-  // Only surface the Messenger lab when the server actually has a messenger
-  // bot configured — otherwise toggling it would do nothing useful.
-  const messengerPlatformsSWR = useSWR('messenger:availablePlatforms', () =>
-    messengerService.availablePlatforms(),
-  );
-  const hasMessengerPlatform = (messengerPlatformsSWR.data?.length ?? 0) > 0;
 
   const [channel, setChannel] = useState<UpdateChannelValue>('stable');
 
@@ -92,7 +84,7 @@ const Page = memo(() => {
       },
     ],
     extra: loading && <Icon spin icon={Loader2Icon} size={16} style={{ opacity: 0.5 }} />,
-    title: t('tab.advanced'),
+    title: t('tab.advanced.toolsAndDiagnostics.title'),
   };
 
   const channelOptions = [
@@ -110,27 +102,23 @@ const Page = memo(() => {
         label: t('tab.advanced.updateChannel.title'),
       },
     ],
-    title: t('tab.advanced.updateChannel.title'),
+    title: t('tab.advanced.appUpdates.title'),
   };
 
   const labItems: FormItemProps[] = [
-    ...(canShowAgentSelfIterationLab
-      ? [
-          {
-            children: (
-              <Switch
-                checked={enableAgentSelfIteration}
-                loading={!isPreferenceInit}
-                onChange={(checked: boolean) => updateLab({ enableAgentSelfIteration: checked })}
-              />
-            ),
-            className: styles.labItem,
-            desc: tLabs('features.agentSelfIteration.desc'),
-            label: tLabs('features.agentSelfIteration.title'),
-            minWidth: undefined,
-          } satisfies FormItemProps,
-        ]
-      : []),
+    {
+      children: (
+        <Switch
+          checked={enableAgentDocumentFloatingChatPanel}
+          loading={!isPreferenceInit}
+          onChange={(checked) => updateLab({ enableAgentDocumentFloatingChatPanel: checked })}
+        />
+      ),
+      className: styles.labItem,
+      desc: tLabs('features.agentDocumentFloatingChatPanel.desc'),
+      label: tLabs('features.agentDocumentFloatingChatPanel.title'),
+      minWidth: undefined,
+    },
     {
       children: (
         <Switch
@@ -144,6 +132,23 @@ const Page = memo(() => {
       label: tLabs('features.inputMarkdown.title'),
       minWidth: undefined,
     },
+    ...(isDesktop
+      ? [
+          {
+            children: (
+              <Switch
+                checked={enableImessage}
+                loading={!isPreferenceInit}
+                onChange={(checked: boolean) => updateLab({ enableImessage: checked })}
+              />
+            ),
+            className: styles.labItem,
+            desc: tLabs('features.imessage.desc'),
+            label: tLabs('features.imessage.title'),
+            minWidth: undefined,
+          } satisfies FormItemProps,
+        ]
+      : []),
     ...(hasGatewayUrl
       ? [
           {
@@ -159,21 +164,17 @@ const Page = memo(() => {
             label: tLabs('features.gatewayMode.title'),
             minWidth: undefined,
           } satisfies FormItemProps,
-        ]
-      : []),
-    ...(hasMessengerPlatform
-      ? [
           {
             children: (
               <Switch
-                checked={enableMessenger}
+                checked={enablePlatformAgent}
                 loading={!isPreferenceInit}
-                onChange={(checked: boolean) => updateLab({ enableMessenger: checked })}
+                onChange={(checked: boolean) => updateLab({ enablePlatformAgent: checked })}
               />
             ),
             className: styles.labItem,
-            desc: tLabs('features.messenger.desc'),
-            label: tLabs('features.messenger.title'),
+            desc: tLabs('features.platformAgent.desc'),
+            label: tLabs('features.platformAgent.title'),
             minWidth: undefined,
           } satisfies FormItemProps,
         ]

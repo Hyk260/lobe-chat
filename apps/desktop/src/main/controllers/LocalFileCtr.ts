@@ -12,6 +12,8 @@ import {
   type GrepContentParams,
   type GrepContentResult,
   type ListLocalFileParams,
+  type LocalFilePreviewUrlParams,
+  type LocalFilePreviewUrlResult,
   type LocalMoveFilesResultItem,
   type LocalReadFileParams,
   type LocalReadFileResult,
@@ -39,17 +41,18 @@ import {
 import {
   editLocalFile,
   expandTilde,
+  type FileResult,
   listLocalFiles,
   moveLocalFiles,
   readLocalFile,
   renameLocalFile,
+  type SearchOptions,
   writeLocalFile,
 } from '@lobechat/local-file-shell';
 import { dialog, shell } from 'electron';
 import { execa } from 'execa';
 import { unzipSync } from 'fflate';
 
-import { type FileResult, type SearchOptions } from '@/modules/fileSearch';
 import ContentSearchService from '@/services/contentSearchSrv';
 import FileSearchService from '@/services/fileSearchSrv';
 import { createLogger } from '@/utils/logger';
@@ -187,14 +190,15 @@ export default class LocalFileCtr extends ControllerModule {
     error?: string;
     success: boolean;
   }> {
-    logger.debug('Attempting to open file:', { filePath });
+    const resolvedPath = expandTilde(filePath) ?? filePath;
+    logger.debug('Attempting to open file:', { filePath: resolvedPath });
 
     try {
-      await shell.openPath(filePath);
-      logger.debug('File opened successfully:', { filePath });
+      await shell.openPath(resolvedPath);
+      logger.debug('File opened successfully:', { filePath: resolvedPath });
       return { success: true };
     } catch (error) {
-      logger.error(`Failed to open file ${filePath}:`, error);
+      logger.error(`Failed to open file ${resolvedPath}:`, error);
       return { error: (error as Error).message, success: false };
     }
   }
@@ -204,8 +208,13 @@ export default class LocalFileCtr extends ControllerModule {
     error?: string;
     success: boolean;
   }> {
-    const folderPath = isDirectory ? targetPath : path.dirname(targetPath);
-    logger.debug('Attempting to open folder:', { folderPath, isDirectory, targetPath });
+    const resolvedTarget = expandTilde(targetPath) ?? targetPath;
+    const folderPath = isDirectory ? resolvedTarget : path.dirname(resolvedTarget);
+    logger.debug('Attempting to open folder:', {
+      folderPath,
+      isDirectory,
+      targetPath: resolvedTarget,
+    });
 
     try {
       await shell.openPath(folderPath);
@@ -371,6 +380,28 @@ export default class LocalFileCtr extends ControllerModule {
   }
 
   @IpcMethod()
+  async getLocalFilePreviewUrl({
+    path: filePath,
+    workingDirectory,
+  }: LocalFilePreviewUrlParams): Promise<LocalFilePreviewUrlResult> {
+    try {
+      const url = await this.app.localFileProtocolManager.createPreviewUrl({
+        filePath,
+        workspaceRoot: workingDirectory,
+      });
+
+      if (!url) {
+        return { error: 'File is outside the approved workspace', success: false };
+      }
+
+      return { success: true, url };
+    } catch (error) {
+      logger.error('Failed to create local file preview URL:', error);
+      return { error: (error as Error).message, success: false };
+    }
+  }
+
+  @IpcMethod()
   async handlePrepareSkillDirectory({
     forceRefresh,
     url,
@@ -532,6 +563,7 @@ export default class LocalFileCtr extends ControllerModule {
           requestedScope,
           root,
         });
+        await this.approveProjectRootForPreview(root);
 
         return {
           entries,
@@ -560,6 +592,7 @@ export default class LocalFileCtr extends ControllerModule {
       engine: fallback.engine,
       requestedScope,
     });
+    await this.approveProjectRootForPreview(requestedScope);
 
     return {
       entries,
@@ -640,5 +673,13 @@ export default class LocalFileCtr extends ControllerModule {
   async handleEditFile(params: EditLocalFileParams): Promise<EditLocalFileResult> {
     logger.debug(`Editing file ${params.file_path}`, { replace_all: params.replace_all });
     return editLocalFile(params);
+  }
+
+  private async approveProjectRootForPreview(root: string) {
+    try {
+      await this.app.localFileProtocolManager.approveIndexedProjectRoot(root);
+    } catch (error) {
+      logger.error(`Failed to approve project preview root ${root}:`, error);
+    }
   }
 }

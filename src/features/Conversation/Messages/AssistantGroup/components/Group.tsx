@@ -4,6 +4,7 @@ import isEqual from 'fast-deep-equal';
 import { memo, useMemo } from 'react';
 
 import { LOADING_FLAT } from '@/const/message';
+import ContentLoading from '@/features/Conversation/Messages/components/ContentLoading';
 import { type AssistantContentBlock } from '@/types/index';
 
 import { messageStateSelectors, useConversationStore } from '../../../store';
@@ -209,6 +210,31 @@ const appendWorkflowRangeBlock = (
   block: AssistantContentBlock,
   allowLeadingSentencePromotion = false,
 ) => {
+  if (block.error) {
+    if (hasTools(block)) {
+      appendWorkflowBlock(
+        segments,
+        createWorkflowRenderBlock(block, {
+          content: '',
+          error: undefined,
+          imageList: undefined,
+          reasoning: undefined,
+        }),
+      );
+      appendAnswerBlock(
+        segments,
+        createAnswerRenderBlock(block, {
+          reasoning: undefined,
+          tools: undefined,
+        }),
+      );
+      return;
+    }
+
+    appendAnswerBlock(segments, block);
+    return;
+  }
+
   if (!shouldPromoteMixedBlockContent(block)) {
     const leadingSentenceSplit =
       allowLeadingSentencePromotion && segments.length === 0 && hasTools(block)
@@ -370,10 +396,10 @@ const partitionBlocks = (
 
 const withMarkdownStreamingState = (
   block: RenderableAssistantContentBlock,
-  firstBlockId: string | undefined,
+  lastBlockId: string | undefined,
 ): RenderableAssistantContentBlock => ({
   ...block,
-  disableMarkdownStreaming: block.disableMarkdownStreaming || block.id === firstBlockId,
+  disableMarkdownStreaming: block.disableMarkdownStreaming || block.id !== lastBlockId,
 });
 
 const shouldInlineWorkflowSegment = (blocks: RenderableAssistantContentBlock[]): boolean => {
@@ -402,7 +428,7 @@ const Group = memo<GroupChildrenProps>(
       messageStateSelectors.isAssistantGroupItemGenerating(id)(s),
     ]);
     const contextValue = useMemo(() => ({ assistantGroupId: id }), [id]);
-    const firstBlockId = blocks[0]?.id;
+    const lastBlockId = blocks.at(-1)?.id;
 
     const { segments, postToolTailPromoted } = useMemo(
       () => partitionBlocks(blocks, isGenerating),
@@ -410,6 +436,20 @@ const Group = memo<GroupChildrenProps>(
     );
 
     const workflowChromeComplete = !isGenerating || postToolTailPromoted;
+
+    // When the turn ends on an inline single-tool segment whose tool already
+    // settled but the run is still generating (waiting on the next step), the
+    // inline path renders no working chrome — unlike WorkflowCollapse, which has
+    // its own streaming header. Without this the user sees a blank gap below the
+    // finished tool. Render the same "running" indicator used at turn start to
+    // fill it. Multi-tool segments keep their own chrome; a tool still executing
+    // is covered by its own loading placeholder (areWorkflowToolsComplete=false).
+    const lastSegment = segments.at(-1);
+    const showTailRunningIndicator =
+      isGenerating &&
+      lastSegment?.kind === 'workflow' &&
+      shouldInlineWorkflowSegment(lastSegment.blocks) &&
+      areWorkflowToolsComplete(lastSegment.blocks.flatMap((block) => block.tools ?? []));
 
     if (isCollapsed) {
       return (
@@ -430,7 +470,7 @@ const Group = memo<GroupChildrenProps>(
 
               if (shouldInlineWorkflowSegment(segment.blocks)) {
                 return segment.blocks.map((block, blockIndex) => {
-                  const item = withMarkdownStreamingState(block, firstBlockId);
+                  const item = withMarkdownStreamingState(block, lastBlockId);
                   if (!isGenerating && isEmptyBlock(item)) return null;
 
                   return (
@@ -454,7 +494,7 @@ const Group = memo<GroupChildrenProps>(
                   key={segment.blocks[0]?.renderKey ?? `${id}.workflow.${index}`}
                   workflowChromeComplete={workflowChromeComplete}
                   blocks={segment.blocks.map((block) =>
-                    withMarkdownStreamingState(block, firstBlockId),
+                    withMarkdownStreamingState(block, lastBlockId),
                   )}
                 />
               );
@@ -465,7 +505,7 @@ const Group = memo<GroupChildrenProps>(
 
             return (
               <GroupItem
-                {...withMarkdownStreamingState(item, firstBlockId)}
+                {...withMarkdownStreamingState(item, lastBlockId)}
                 assistantId={id}
                 contentId={contentId}
                 disableEditing={disableEditing}
@@ -474,6 +514,7 @@ const Group = memo<GroupChildrenProps>(
               />
             );
           })}
+          {showTailRunningIndicator && <ContentLoading id={id} />}
         </Flexbox>
       </MessageAggregationContext>
     );

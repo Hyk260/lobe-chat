@@ -13,6 +13,7 @@ import { memo, useCallback, useMemo } from 'react';
 
 import PluginAvatar from '@/components/Plugins/PluginAvatar';
 import { globalAgentContextManager } from '@/helpers/GlobalAgentContextManager';
+import { usePermission } from '@/hooks/usePermission';
 import { useAgentStore } from '@/store/agent';
 import { pluginHelpers, useToolStore } from '@/store/tool';
 import { toolSelectors } from '@/store/tool/selectors';
@@ -112,7 +113,8 @@ const resolveApiDescription = (
 };
 
 const useMentionOptions = () => {
-  const installedTools = useToolStore(toolSelectors.metaList, isEqual);
+  const { allowed: canEdit } = usePermission('edit_own_content');
+  const installedTools = useToolStore(toolSelectors.discoverableMetaList, isEqual);
   const toggleAgentPlugin = useAgentStore((s) => s.toggleAgentPlugin);
 
   const baseItems = useMemo<MentionListOption[]>(() => {
@@ -148,6 +150,8 @@ const useMentionOptions = () => {
         label,
         metadata: createMetadata(),
         onSelect: (editor: IEditor) => {
+          if (!canEdit) return;
+
           toggleAgentPlugin(tool.identifier, true);
           editor.dispatchCommand(INSERT_MENTION_COMMAND, {
             label,
@@ -156,7 +160,7 @@ const useMentionOptions = () => {
         },
       };
     });
-  }, [installedTools, toggleAgentPlugin]);
+  }, [canEdit, installedTools, toggleAgentPlugin]);
 
   const loadItems = useCallback(
     async (
