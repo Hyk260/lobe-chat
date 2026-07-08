@@ -15,6 +15,7 @@ describe('buildWorkspaceAwarePath', () => {
       '/acme/community/agent/jailbreak',
     );
     expect(buildWorkspaceAwarePath('/group/group-1', 'acme')).toBe('/acme/group/group-1');
+    expect(buildWorkspaceAwarePath('/fleet', 'acme')).toBe('/acme/fleet');
   });
 
   it('bypasses the prefix when `escape` is true', () => {
@@ -31,6 +32,15 @@ describe('buildWorkspaceAwarePath', () => {
     expect(buildWorkspaceAwarePath('/acme/memory', 'acme')).toBe('/acme/memory');
   });
 
+  it('does not prefix paths already qualified by another workspace slug', () => {
+    expect(buildWorkspaceAwarePath('/test-team/agent/agent-1', 'acme')).toBe(
+      '/test-team/agent/agent-1',
+    );
+    expect(buildWorkspaceAwarePath('/test-team/settings/general', 'acme')).toBe(
+      '/test-team/settings/general',
+    );
+  });
+
   it('leaves relative paths alone (router resolves them)', () => {
     expect(buildWorkspaceAwarePath('memory', 'acme')).toBe('memory');
     expect(buildWorkspaceAwarePath('../tasks', 'acme')).toBe('../tasks');
@@ -41,6 +51,10 @@ describe('buildWorkspaceAwarePath', () => {
     expect(buildWorkspaceAwarePath('/me/profile', 'acme')).toBe('/me/profile');
     expect(buildWorkspaceAwarePath('/share/t/foo', 'acme')).toBe('/share/t/foo');
     expect(buildWorkspaceAwarePath('/devtools', 'acme')).toBe('/devtools');
+    // Workspace invite acceptance is a standalone root-level page (no
+    // `/:workspaceSlug` mirror), so notifications linking to it must not be
+    // prefixed while the recipient sits inside another workspace.
+    expect(buildWorkspaceAwarePath('/invite/tok-123', 'acme')).toBe('/invite/tok-123');
   });
 
   it('prefixes settings sub-paths that have a workspace mirror', () => {

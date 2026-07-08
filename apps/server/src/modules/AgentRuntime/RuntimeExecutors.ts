@@ -14,21 +14,24 @@ import {
 } from '@lobechat/agent-runtime';
 import { LobeActivatorIdentifier } from '@lobechat/builtin-tool-activator';
 import {
+  type ComposioServiceSummary,
   type CredSummary,
+  generateComposioServicesList,
   generateCredsList,
-  generateKlavisServicesList,
-  type KlavisServiceSummary,
 } from '@lobechat/builtin-tool-creds';
 import { LocalSystemManifest } from '@lobechat/builtin-tool-local-system';
+import { builtinTools } from '@lobechat/builtin-tools';
 import { BRANDING_PROVIDER } from '@lobechat/business-const';
-import { KLAVIS_SERVER_TYPES } from '@lobechat/const';
+import { COMPOSIO_APP_TYPES } from '@lobechat/const';
 import {
+  type AgentBuilderContext,
   type AgentContextDocument,
   type AgentGroupConfig,
   type BotPlatformContext,
   buildStepSkillDelta,
   buildStepToolDelta,
   type LobeToolManifest,
+  type OfficialToolItem,
   type OnboardingContext,
   type OperationToolSet,
   type ResolvedToolSet,
@@ -38,7 +41,15 @@ import {
   ToolResolver,
 } from '@lobechat/context-engine';
 import { parse } from '@lobechat/conversation-flow';
-import { consumeStreamUntilDone } from '@lobechat/model-runtime';
+import {
+  applyModelExtendParams,
+  type ChatStreamPayload,
+  consumeStreamUntilDone,
+  isDeepSeekThinkingEligibleModel,
+  isDeepSeekV4FamilyModel,
+  isKimiAlwaysPreserveThinkingModel,
+  type ModelExtendParams,
+} from '@lobechat/model-runtime';
 import {
   context as otelContext,
   SpanKind,
@@ -61,32 +72,45 @@ import { chainCompressContext } from '@lobechat/prompts';
 import {
   type ChatToolPayload,
   type ExecSubAgentParams,
+  type ExecVirtualSubAgentParams,
   type MessageToolCall,
   type UIChatMessage,
 } from '@lobechat/types';
 import { sanitizeToolCallArguments, serializePartsForStorage } from '@lobechat/utils';
 import debug from 'debug';
+import { type ExtendParamsType, ModelProvider } from 'model-bank';
 
-import { klavisEnv } from '@/config/klavis';
+import { composioEnv } from '@/config/composio';
+import { AgentModel } from '@/database/models/agent';
+import { FileModel } from '@/database/models/file';
 import { type MessageModel, MessageModel as MessageModelClass } from '@/database/models/message';
+import { PluginModel } from '@/database/models/plugin';
 import { TopicModel } from '@/database/models/topic';
 import { UserModel } from '@/database/models/user';
+import { UserPersonaModel } from '@/database/models/userMemory/persona';
 import { type LobeChatDatabase } from '@/database/type';
 import { fileEnv } from '@/envs/file';
+import { type ExecutionPlan, isDeviceCapablePlan } from '@/helpers/executionTarget';
 import { serverMessagesEngine } from '@/server/modules/Mecha/ContextEngineering';
 import { type EvalContext } from '@/server/modules/Mecha/ContextEngineering/types';
 import { initModelRuntimeFromDB } from '@/server/modules/ModelRuntime';
 import { AgentDocumentsService } from '@/server/services/agentDocuments';
 import type { HookDispatcher } from '@/server/services/agentRuntime/hooks/HookDispatcher';
+import type {
+  ExecGroupMemberParams,
+  ExecGroupMemberResult,
+} from '@/server/services/agentRuntime/types';
 import {
   type DeviceAccessReason,
   isDeviceToolIdentifier,
   logDeviceToolAudit,
 } from '@/server/services/aiAgent/deviceToolAudit';
 import { FileService } from '@/server/services/file';
+import { MarketService } from '@/server/services/market';
 import { MessageService } from '@/server/services/message';
 import { OnboardingService } from '@/server/services/onboarding';
 import {
+  type ServerAgentMemberRunner,
   type ServerSubAgentRunner,
   type ToolExecutionResultResponse,
   type ToolExecutionService,
@@ -132,38 +156,6 @@ const LLM_RETRY_MAX_DELAY_MS = 30_000;
  */
 const EMPTY_COMPLETION_MAX_RETRIES = 2;
 
-const buildBotAgentGroupContext = (params: {
-  agentConfig?: any;
-  agentId?: string;
-  botContext?: unknown;
-}): AgentGroupConfig | undefined => {
-  if (!params.botContext || !params.agentId) return undefined;
-
-  const title = params.agentConfig?.title;
-  const description = params.agentConfig?.description;
-  const name = typeof title === 'string' && title.trim() ? title.trim() : 'Current Agent';
-
-  return {
-    agentMap: {
-      [params.agentId]: {
-        name,
-        role: 'participant',
-      },
-    },
-    currentAgentId: params.agentId,
-    currentAgentName: name,
-    currentAgentRole: 'participant',
-    members: [
-      {
-        id: params.agentId,
-        name,
-        role: 'participant',
-      },
-    ],
-    systemPrompt: typeof description === 'string' ? description : undefined,
-  };
-};
-
 /**
  * Output-token count at or below this — combined with no content, reasoning,
  * tool calls, or images — marks a turn as an empty completion.
@@ -200,6 +192,51 @@ const isEmptyModelCompletion = (params: {
   }
 
   return true;
+};
+
+type ReasoningReplayNode = {
+  children?: ReasoningReplayNode[];
+  members?: ReasoningReplayNode[];
+  reasoning?: unknown;
+};
+
+const stripAssistantReasoningForReplay = (messages: UIChatMessage[]): UIChatMessage[] => {
+  const stripMessage = <T extends ReasoningReplayNode>(message: T): T => {
+    let changed = false;
+
+    const children = message.children?.map((child) => {
+      const strippedChild = stripMessage(child);
+      if (strippedChild !== child) changed = true;
+      return strippedChild;
+    });
+
+    const members = message.members?.map((member) => {
+      const strippedMember = stripMessage(member);
+      if (strippedMember !== member) changed = true;
+      return strippedMember;
+    });
+
+    if ('reasoning' in message) changed = true;
+    if (!changed) return message;
+
+    const { reasoning: _reasoning, ...messageWithoutReasoning } = message;
+
+    return {
+      ...messageWithoutReasoning,
+      ...(children ? { children } : {}),
+      ...(members ? { members } : {}),
+    } as T;
+  };
+
+  let changed = false;
+
+  const strippedMessages = messages.map((message) => {
+    const strippedMessage = stripMessage(message);
+    if (strippedMessage !== message) changed = true;
+    return strippedMessage;
+  });
+
+  return changed ? strippedMessages : messages;
 };
 
 const GEN_AI_FUNCTION_TOOL_TYPE: ToolType = 'function';
@@ -277,7 +314,7 @@ const buildPostProcessUrl = (
 };
 
 /**
- * Build the per-tool-call server sub-agent runner injected into the tool
+ * Build the per-tool-call server virtual sub-agent runner injected into the tool
  * execution context. Closes over the current tool payload + parent message so
  * the `callSubAgent` server tool can fork a child op without re-deriving the
  * message anchor (which it cannot do correctly from its own context).
@@ -285,17 +322,18 @@ const buildPostProcessUrl = (
  * The runner creates the pending placeholder tool message that anchors the
  * isolation thread (so the UI shows a loading state and the completion bridge
  * has a message to backfill), then kicks off the child op asynchronously and
- * returns immediately. Returns `undefined` when sub-agent execution is not
- * available (no `execSubAgent` callback, or missing agent/topic context).
+ * returns immediately. Returns `undefined` when virtual sub-agent execution is
+ * not available (no `execVirtualSubAgent` callback, or missing agent/topic
+ * context).
  */
-const buildServerSubAgentRunner = (
+const buildServerVirtualSubAgentRunner = (
   ctx: RuntimeExecutorContext,
   state: AgentState,
   chatToolPayload: ChatToolPayload,
   parentMessageId: string,
 ): ServerSubAgentRunner | undefined => {
-  const execSubAgent = ctx.execSubAgent;
-  if (!execSubAgent) return undefined;
+  const execVirtualSubAgent = ctx.execVirtualSubAgent;
+  if (!execVirtualSubAgent) return undefined;
 
   const agentId = state.metadata?.agentId;
   const topicId = ctx.topicId ?? state.metadata?.topicId;
@@ -309,6 +347,7 @@ const buildServerSubAgentRunner = (
       const placeholder = await ctx.messageModel.create({
         agentId,
         content: '',
+        groupId: state.metadata?.groupId ?? undefined,
         parentId: parentMessageId,
         plugin: chatToolPayload as any,
         pluginState: { status: 'pending' },
@@ -318,35 +357,42 @@ const buildServerSubAgentRunner = (
         topicId,
       });
 
-      // 2. Fork the child op anchored to the placeholder. `resumeParentOnComplete`
-      //    tells execSubAgent to register the completion bridge that
-      //    backfills this tool message and resumes the parent op.
-      const result = (await execSubAgent({
+      // 2. Fork the virtual child op anchored to the placeholder. The virtual
+      //    entry marks the child as `isSubAgent` and registers the completion
+      //    bridge that backfills this tool message and resumes the parent op.
+      const result = (await execVirtualSubAgent({
         agentId: targetAgentId ?? agentId,
         groupId: state.metadata?.groupId ?? undefined,
         instruction,
         parentMessageId: placeholder.id,
         parentOperationId: ctx.operationId,
-        resumeParentOnComplete: true,
         timeout,
         title: description,
         topicId,
-      })) as { operationId?: string; success?: boolean; threadId?: string } | undefined;
+      })) as
+        | { error?: string; operationId?: string; success?: boolean; threadId?: string }
+        | undefined;
 
       // 3. If the child op never started, no completion bridge will fire — parking
       //    the parent on it would hang forever. Drop the placeholder and signal
-      //    `started: false` so callSubAgent surfaces an inline tool error instead.
+      //    `started: false` (with the underlying reason) so callSubAgent surfaces
+      //    an inline tool error instead.
       if (!result?.success) {
         try {
           await ctx.messageModel.deleteMessage(placeholder.id);
         } catch (error) {
           log(
-            'buildServerSubAgentRunner: failed to clean up placeholder %s: %O',
+            'buildServerVirtualSubAgentRunner: failed to clean up placeholder %s: %O',
             placeholder.id,
             error,
           );
         }
-        return { started: false, subOperationId: result?.operationId, threadId: '' };
+        return {
+          error: result?.error,
+          started: false,
+          subOperationId: result?.operationId,
+          threadId: '',
+        };
       }
 
       return {
@@ -354,6 +400,165 @@ const buildServerSubAgentRunner = (
         subOperationId: result?.operationId,
         threadId: result?.threadId ?? '',
       };
+    },
+  };
+};
+
+/**
+ * Build the per-tool "call agent member" runner for the group orchestration
+ * server tool (`lobe-group-management`). Mirrors {@link buildServerVirtualSubAgentRunner}
+ * but for group members: it owns the group tool message (the parked tool call)
+ * and the per-member anchors that drive the K=N member barrier.
+ *
+ * For each `agentMember.run(...)` it:
+ *   1. creates the group tool placeholder (`tool_call_id` = the group-management
+ *      call id) stamped with the barrier target + finish disposition;
+ *   2. for a single member uses that placeholder as the member anchor; for
+ *      multiple members creates one child anchor per member under it;
+ *   3. forks each member via `ctx.execGroupMember` (in-group or isolated);
+ *   4. backfills anchors for members that failed to start so the barrier can
+ *      still complete, and tears everything down when none started.
+ *
+ * Returns `undefined` when group-member execution is unavailable (no
+ * `execGroupMember` callback, or missing agent/topic/group context).
+ */
+const buildServerAgentMemberRunner = (
+  ctx: RuntimeExecutorContext,
+  state: AgentState,
+  chatToolPayload: ChatToolPayload,
+  parentMessageId: string,
+): ServerAgentMemberRunner | undefined => {
+  const execGroupMember = ctx.execGroupMember;
+  if (!execGroupMember) return undefined;
+
+  const agentId = state.metadata?.agentId;
+  const topicId = ctx.topicId ?? state.metadata?.topicId;
+  const groupId = state.metadata?.groupId ?? undefined;
+  if (!agentId || !topicId || !groupId) return undefined;
+
+  return {
+    run: async ({ members, mode, onComplete, disableTools, timeout }) => {
+      const expectedMembers = members.length;
+      if (expectedMembers === 0) return { started: false, startedCount: 0 };
+
+      // In-group multi-member actions (broadcast) render as an AgentCouncil: each
+      // member speaks DIRECTLY under the group tool message and the UI groups them
+      // into one parallel-streaming block. This mirrors the client broadcast tree
+      // (`metadata.agentCouncil` + member messages parented to the tool message),
+      // so it reuses the same conversation-flow council path. No per-member receipt
+      // anchors — the member barrier counts completed member messages instead.
+      const isCouncil = mode === 'in_group' && expectedMembers > 1;
+
+      // 1. Group tool placeholder — the parked tool call the supervisor op waits
+      //    on. Stamped with the barrier target + finish disposition so the resume
+      //    path (and verify watchdog) resolve resume-vs-finish on their own.
+      const groupTool = await ctx.messageModel.create({
+        agentId,
+        content: '',
+        groupId,
+        ...(isCouncil ? { metadata: { agentCouncil: true } } : {}),
+        parentId: parentMessageId,
+        plugin: chatToolPayload as any,
+        pluginState: { expectedMembers, onComplete, status: 'pending' },
+        role: 'tool',
+        threadId: state.metadata?.threadId,
+        tool_call_id: chatToolPayload.id,
+        topicId,
+      });
+
+      // 2. Per-member anchors. A single member collapses onto the group tool
+      //    message; multiple members each get a child anchor under it. These
+      //    anchors drive the K=N completion barrier; for councils the member
+      //    responses themselves attach to the group tool message (see
+      //    execAgentMember), so the UI groups them while the anchors stay
+      //    barrier-only and are filtered out of the council member set.
+      const anchorIds: string[] = [];
+      if (expectedMembers === 1) {
+        anchorIds.push(groupTool.id);
+      } else {
+        for (let i = 0; i < expectedMembers; i += 1) {
+          const memberToolCallId = `${chatToolPayload.id}::m${i}`;
+          const anchor = await ctx.messageModel.create({
+            agentId,
+            content: '',
+            groupId,
+            parentId: groupTool.id,
+            plugin: { ...(chatToolPayload as any), id: memberToolCallId },
+            pluginState: { status: 'pending' },
+            role: 'tool',
+            threadId: state.metadata?.threadId,
+            tool_call_id: memberToolCallId,
+            topicId,
+          });
+          anchorIds.push(anchor.id);
+        }
+      }
+
+      // 3. Fork members.
+      let startedCount = 0;
+      await Promise.all(
+        members.map(async (member, i) => {
+          const anchorMessageId = anchorIds[i];
+          try {
+            const result = await execGroupMember({
+              agentId: member.agentId,
+              anchorMessageId,
+              disableTools,
+              expectedMembers,
+              groupId,
+              groupToolMessageId: groupTool.id,
+              instruction: member.instruction,
+              mode,
+              onComplete,
+              parentOperationId: ctx.operationId,
+              // The supervisor assistant message owning this tool call — council
+              // members parent their response here (siblings of the council tool).
+              supervisorMessageId: parentMessageId,
+              timeout,
+              topicId,
+            });
+            if (result?.started) {
+              startedCount += 1;
+              return;
+            }
+          } catch (error) {
+            log(
+              'buildServerAgentMemberRunner: member %s failed to start: %O',
+              member.agentId,
+              error,
+            );
+          }
+          // Member failed to start — its completion bridge will never fire, so
+          // backfill the anchor as errored to keep the K=N barrier reachable.
+          try {
+            await ctx.messageModel.updateToolMessage(anchorMessageId, {
+              content: `Agent member "${member.agentId}" failed to start.`,
+              pluginState: { status: 'error' },
+            });
+          } catch (error) {
+            log(
+              'buildServerAgentMemberRunner: failed to mark anchor %s as errored: %O',
+              anchorMessageId,
+              error,
+            );
+          }
+        }),
+      );
+
+      // None started — no bridge will ever fire, so tear down the placeholders
+      // and let the caller surface an inline tool error instead of parking.
+      if (startedCount === 0) {
+        for (const id of new Set([...anchorIds, groupTool.id])) {
+          try {
+            await ctx.messageModel.deleteMessage(id);
+          } catch (error) {
+            log('buildServerAgentMemberRunner: cleanup failed for %s: %O', id, error);
+          }
+        }
+        return { started: false, startedCount: 0 };
+      }
+
+      return { started: true, startedCount };
     },
   };
 };
@@ -476,11 +681,23 @@ export interface RuntimeExecutorContext {
   discordContext?: any;
   evalContext?: EvalContext;
   /**
-   * Callback to spawn a sub-agent task server-side.
+   * Callback to fork a group member ("call agent member") under a
+   * `lobe-group-management` tool call. Injected by AiAgentService; powers the
+   * per-tool `agentMember` runner (in-group + isolated members, K=N barrier).
+   */
+  execGroupMember?: (params: ExecGroupMemberParams) => Promise<ExecGroupMemberResult>;
+  /**
+   * Callback to run a legacy agent invocation server-side.
    * Injected by AiAgentService so exec_sub_agent / exec_sub_agents executors
-   * can dispatch callAgent-triggered tasks without a circular import.
+   * can dispatch callAgent-triggered runs without a circular import.
    */
   execSubAgent?: (params: ExecSubAgentParams) => Promise<unknown>;
+  /**
+   * Callback to fork a `lobe-agent.callSubAgent` virtual child run. Unlike
+   * execSubAgent, this path installs the async completion bridge and marks the
+   * child operation as a sub-agent.
+   */
+  execVirtualSubAgent?: (params: ExecVirtualSubAgentParams) => Promise<unknown>;
   hookDispatcher?: HookDispatcher;
   loadAgentState?: (operationId: string) => Promise<AgentState | null>;
   messageModel: MessageModel;
@@ -532,17 +749,23 @@ export const createRuntimeExecutors = (
     const provider = llmPayload.provider || state.modelRuntimeConfig?.provider;
     // Resolve tools via ToolResolver (unified tool injection).
     //
-    // Belt-and-suspenders: even if `aiAgent.execAgent` ever forgets to clear
-    // `state.metadata.activeDeviceId` for a non-trusted sender, swallowing
-    // it here keeps `buildStepToolDelta` from re-injecting `local-system` —
-    // the engine's enabledToolIds exclusion alone is not enough, since the
-    // delta builder treats activeDeviceId as an independent activation
-    // signal and only dedupes against already-enabled tools.
+    // Single-track device gate: `buildStepToolDelta` treats activeDeviceId as
+    // an independent activation signal (it only dedupes against already-
+    // enabled tools), so any id that reaches it WILL inject local-system. The
+    // execution plan is the only authority on whether this session may touch
+    // a device — swallow the id for non-device-capable plans (`none`,
+    // `sandbox`) and for denied senders, even if `state.metadata.activeDeviceId`
+    // was populated by a bug or a mid-run side effect. Plans absent on old /
+    // resumed operations fall back to the policy-only gate.
     const devicePolicy = state.metadata?.deviceAccessPolicy as
       | { canUseDevice: boolean; reason: DeviceAccessReason }
       | undefined;
+    const executionPlan = state.metadata?.executionPlan as ExecutionPlan | undefined;
+    const planAllowsDevice = !executionPlan || isDeviceCapablePlan(executionPlan);
     const activeDeviceId =
-      devicePolicy?.canUseDevice === false ? undefined : state.metadata?.activeDeviceId;
+      devicePolicy?.canUseDevice === false || !planAllowsDevice
+        ? undefined
+        : state.metadata?.activeDeviceId;
     const operationToolSet: OperationToolSet = state.operationToolSet ?? {
       enabledToolIds: [],
       executorMap: state.toolExecutorMap ?? {},
@@ -635,6 +858,7 @@ export const createRuntimeExecutors = (
       assistantMessageItem = await ctx.messageModel.create({
         agentId: state.metadata!.agentId!,
         content: '',
+        groupId: state.metadata?.groupId ?? undefined,
         model,
         parentId,
         provider,
@@ -660,8 +884,9 @@ export const createRuntimeExecutors = (
 
     try {
       type ContentPart = { text: string; type: 'text' } | { image: string; type: 'image' };
-      let shouldPersistAssistantReasoning = false;
+      let shouldReplayAssistantReasoning = false;
       let preserveThinkingForPayload: boolean | undefined;
+      let resolvedExtendParams: ModelExtendParams | undefined;
 
       // Process messages through serverMessagesEngine to inject system role, knowledge, etc.
       // Rebuild params from agentConfig at execution time (capabilities built dynamically)
@@ -677,41 +902,106 @@ export const createRuntimeExecutors = (
             : undefined;
         const preserveThinkingRequested = preserveThinkingConfigured === true;
 
+        const readExtendParams = (
+          card: (typeof builtinModels)[number] | undefined,
+        ): string[] | undefined =>
+          card &&
+          'settings' in card &&
+          card.settings &&
+          typeof card.settings === 'object' &&
+          'extendParams' in card.settings
+            ? (card.settings as { extendParams?: string[] }).extendParams
+            : undefined;
+
         const modelCard = builtinModels.find(
           (item) =>
             item.providerId === provider &&
             (item.id === model || item.config?.deploymentName === model),
         );
-        const modelExtendParams =
-          modelCard &&
-          'settings' in modelCard &&
-          modelCard.settings &&
-          typeof modelCard.settings === 'object' &&
-          'extendParams' in modelCard.settings
-            ? (modelCard.settings as { extendParams?: string[] }).extendParams
-            : undefined;
+        const canonicalModelCard = builtinModels.find(
+          (item) => item.id === model || item.config?.deploymentName === model,
+        );
+        const modelKnowledgeCutoff =
+          modelCard?.knowledgeCutoff ??
+          (provider === ModelProvider.LobeHub ? canonicalModelCard?.knowledgeCutoff : undefined);
+
+        let modelExtendParams = readExtendParams(modelCard);
+
+        // Aggregation providers (e.g. `lobehub`) may serve a model without copying
+        // its origin `settings.extendParams`. Fall back to the canonical model card
+        // (matched by id across any provider) so reasoning/thinking params like
+        // `thinkingLevel` still reach the model. Mirrors the client-side
+        // `transformToAiModelList` re-namespacing behavior.
+        if (!modelExtendParams || modelExtendParams.length === 0) {
+          modelExtendParams = readExtendParams(canonicalModelCard);
+        }
 
         const modelSupportsPreserveThinkingFromCard =
           Array.isArray(modelExtendParams) && modelExtendParams.includes('preserveThinking');
+        // Kimi K2.7+ Code has preserved thinking always active and cannot opt out.
+        const kimiForcesPreserveThinking =
+          (provider === 'moonshot' || provider === BRANDING_PROVIDER) &&
+          isKimiAlwaysPreserveThinkingModel(model);
+        // DeepSeek V4 / reasoner thinking models MUST replay the real assistant
+        // reasoning in history — this is mandatory, not opt-in. Their
+        // Anthropic-compatible API rejects an assistant tool-call turn whose
+        // thinking block is missing (HTTP 400), so stripping reasoning leaves the
+        // payload builder no choice but to emit a whitespace-only placeholder
+        // thinking block. Under large agentic context that degenerate history makes
+        // the model emit its final answer *inside* the thinking block with empty
+        // visible text (controlled replay: ~30% answer-in-thinking with the
+        // placeholder vs ~2.5% when the genuine reasoning is replayed). The only
+        // opt-out is a V4 model whose thinking the user explicitly disabled via
+        // `deepseekV4ReasoningEffort: 'none'`. That flag is V4-specific and may
+        // linger on an agent after switching models, so it must NOT suppress
+        // replay for `deepseek-reasoner`, which is thinking-only and always
+        // forces reasoning history in the payload builder — suppressing it there
+        // would reintroduce the 400/answer-hidden behavior.
+        const deepseekV4ThinkingDisabled =
+          isDeepSeekV4FamilyModel(model) &&
+          agentConfig.chatConfig?.deepseekV4ReasoningEffort === 'none';
+        const deepseekForcesPreserveThinking =
+          isDeepSeekThinkingEligibleModel(model) && !deepseekV4ThinkingDisabled;
+        const modelForcesPreserveThinking =
+          kimiForcesPreserveThinking || deepseekForcesPreserveThinking;
         const providerSupportsPreserveThinkingFallback =
-          provider === 'qwen' || provider === 'zhipu';
+          provider === 'qwen' || provider === 'zhipu' || provider === 'moonshot';
         const modelSupportsPreserveThinking =
+          modelForcesPreserveThinking ||
           modelSupportsPreserveThinkingFromCard ||
           (!modelCard && providerSupportsPreserveThinkingFallback);
 
-        shouldPersistAssistantReasoning =
-          preserveThinkingRequested && modelSupportsPreserveThinking;
-        preserveThinkingForPayload =
-          modelSupportsPreserveThinking && typeof preserveThinkingConfigured === 'boolean'
+        shouldReplayAssistantReasoning =
+          (modelForcesPreserveThinking || preserveThinkingRequested) &&
+          modelSupportsPreserveThinking;
+        preserveThinkingForPayload = modelForcesPreserveThinking
+          ? true
+          : modelSupportsPreserveThinking && typeof preserveThinkingConfigured === 'boolean'
             ? preserveThinkingConfigured
             : undefined;
+
+        // Resolve model extend params (thinkingLevel, reasoning effort, urlContext, …)
+        // from the agent chat config so the server-side agent runtime forwards the same
+        // runtime params the client chat service does. Without this, e.g. Gemini 3 Pro's
+        // `thinkingLevel` never reaches the request and thought summaries come back empty.
+        if (agentConfig.chatConfig) {
+          resolvedExtendParams = applyModelExtendParams({
+            chatConfig: agentConfig.chatConfig,
+            extendParams: modelExtendParams as ExtendParamsType[] | undefined,
+            model,
+          });
+        }
+
+        const messagesForContext = shouldReplayAssistantReasoning
+          ? (llmPayload.messages as UIChatMessage[])
+          : stripAssistantReasoningForReplay(llmPayload.messages as UIChatMessage[]);
 
         // Extract <refer_topic> tags from messages and fetch summaries.
         // Skip if messages already contain injected topic_reference_context
         // (e.g., from client-side contextEngineering preprocessing) to avoid double injection.
         let topicReferences;
         const alreadyHasTopicRefs = (
-          llmPayload.messages as Array<{ content: string | unknown }>
+          messagesForContext as Array<{ content: string | unknown }>
         ).some(
           (m) => typeof m.content === 'string' && m.content.includes('topic_reference_context'),
         );
@@ -720,7 +1010,7 @@ export const createRuntimeExecutors = (
           const topicModel = new TopicModel(ctx.serverDB, ctx.userId, ctx.workspaceId);
           const messageModel = new MessageModelClass(ctx.serverDB, ctx.userId, ctx.workspaceId);
           topicReferences = await resolveTopicReferences(
-            llmPayload.messages as Array<{ content: string | unknown }>,
+            messagesForContext as Array<{ content: string | unknown }>,
             async (topicId) => topicModel.findById(topicId),
             async (topicId) => {
               const topic = await topicModel.findById(topicId);
@@ -762,7 +1052,7 @@ export const createRuntimeExecutors = (
           agentConfig?.slug === 'web-onboarding' ||
           resolved.enabledToolIds.includes('lobe-web-onboarding');
         const alreadyHasOnboardingContext = (
-          llmPayload.messages as Array<{ content: string | unknown }>
+          messagesForContext as Array<{ content: string | unknown }>
         ).some((message) => {
           if (typeof message.content !== 'string') return false;
 
@@ -777,7 +1067,6 @@ export const createRuntimeExecutors = (
           try {
             const { formatWebOnboardingStateMessage } =
               await import('@lobechat/builtin-tool-web-onboarding/utils');
-            const { UserPersonaModel } = await import('@/database/models/userMemory/persona');
             const onboardingService = new OnboardingService(ctx.serverDB, ctx.userId);
             const docService = new AgentDocumentsService(
               ctx.serverDB,
@@ -887,7 +1176,6 @@ export const createRuntimeExecutors = (
         let sandboxUploadedFiles = '';
         if (sandboxEnabled === 'true' && ctx.serverDB && ctx.userId && lobehubSkillTopicId) {
           try {
-            const { FileModel } = await import('@/database/models/file');
             const { formatUploadedFilesPrompt } =
               await import('@lobechat/builtin-tool-cloud-sandbox');
             const fileModel = new FileModel(ctx.serverDB, ctx.userId);
@@ -918,7 +1206,6 @@ export const createRuntimeExecutors = (
         let credsListStr = '';
         if (ctx.userId) {
           try {
-            const { MarketService } = await import('@/server/services/market');
             const marketService = new MarketService({ userInfo: { userId: ctx.userId } });
             const credsResult = await marketService.market.creds.list();
             const userCreds = (credsResult as any)?.data ?? [];
@@ -938,39 +1225,141 @@ export const createRuntimeExecutors = (
           }
         }
 
-        // {{KLAVIS_SERVICES_LIST}} — used by lobe-creds system role (Klavis integrations section).
-        // Mirrors client-side: klavisStoreSelectors.getServers() filtered by connection status.
-        let klavisServicesListStr = '';
-        if (ctx.serverDB && ctx.userId && !!klavisEnv.KLAVIS_API_KEY) {
+        // {{COMPOSIO_SERVICES_LIST}} — used by lobe-creds system role (Composio integrations section).
+        let composioServicesListStr = '';
+        if (ctx.serverDB && ctx.userId && !!composioEnv.COMPOSIO_API_KEY) {
           try {
-            const { PluginModel } = await import('@/database/models/plugin');
             const pluginModel = new PluginModel(ctx.serverDB, ctx.userId, ctx.workspaceId);
             const allPlugins = await pluginModel.query();
-            const validKlavisIds = new Set(KLAVIS_SERVER_TYPES.map((t) => t.identifier));
+            const validComposioIds = new Set(COMPOSIO_APP_TYPES.map((t) => t.identifier));
             const connectedIds = new Set(
               allPlugins
                 .filter(
                   (p) =>
-                    validKlavisIds.has(p.identifier) &&
-                    (p.customParams as any)?.klavis?.isAuthenticated === true,
+                    validComposioIds.has(p.identifier) &&
+                    (p.customParams as any)?.composio?.status === 'ACTIVE',
                 )
                 .map((p) => p.identifier),
             );
-            const connected: KlavisServiceSummary[] = KLAVIS_SERVER_TYPES.filter((t) =>
+            const connected: ComposioServiceSummary[] = COMPOSIO_APP_TYPES.filter((t) =>
               connectedIds.has(t.identifier),
             ).map((t) => ({ identifier: t.identifier, name: t.label }));
-            const available: KlavisServiceSummary[] = KLAVIS_SERVER_TYPES.filter(
+            const available: ComposioServiceSummary[] = COMPOSIO_APP_TYPES.filter(
               (t) => !connectedIds.has(t.identifier),
             ).map((t) => ({ identifier: t.identifier, name: t.label }));
-            klavisServicesListStr = generateKlavisServicesList(connected, available);
+            composioServicesListStr = generateComposioServicesList(connected, available);
             log(
-              'Fetched Klavis services for {{KLAVIS_SERVICES_LIST}}: connected=%d, available=%d',
+              'Fetched Composio services for {{COMPOSIO_SERVICES_LIST}}: connected=%d, available=%d',
               connected.length,
               available.length,
             );
           } catch (error) {
             log(
-              'Failed to fetch Klavis services for {{KLAVIS_SERVICES_LIST}} substitution: %O',
+              'Failed to fetch Composio services for {{COMPOSIO_SERVICES_LIST}} substitution: %O',
+              error,
+            );
+          }
+        }
+
+        // Agent Builder (gateway / server mode): the `<current_agent_context>`
+        // that tells the builder LLM WHICH agent it is editing is built
+        // CLIENT-side in chat mode (services/chat/index.ts). In gateway mode that
+        // client code never runs, so without this the context is never injected
+        // and the builder answers with its OWN config instead of the edited
+        // agent's. `state.metadata.editingAgentId` is the agent being configured
+        // (the builder builtin is `state.metadata.agentId`).
+        let agentBuilderContext: AgentBuilderContext | undefined;
+        const editingAgentId = state.metadata?.editingAgentId;
+        if (editingAgentId && ctx.serverDB && ctx.userId) {
+          try {
+            const editingAgentModel = new AgentModel(ctx.serverDB, ctx.userId, ctx.workspaceId);
+            const editingConfig = (await editingAgentModel.getAgentConfigById(
+              editingAgentId,
+            )) as Record<string, any> | null;
+            if (editingConfig) {
+              // Build the `<available_official_tools>` list the same way the
+              // client does (services/chat/index.ts). Without it the builder
+              // prompt — which now relies on injected official tools instead of a
+              // search API — can't see installable builtin/Composio tools or their
+              // enabled/connected status, so the model may pick invalid ids or
+              // claim a supported tool is unavailable.
+              const enabledPlugins: string[] = Array.isArray(editingConfig.plugins)
+                ? (editingConfig.plugins as string[])
+                : [];
+              const composioIdentifiers = new Set(COMPOSIO_APP_TYPES.map((t) => t.identifier));
+              const officialTools: OfficialToolItem[] = [];
+
+              // Builtin tools — exclude hidden/infra tools (mirrors the client's
+              // `metaList`) and Composio entries (listed separately below).
+              for (const tool of builtinTools) {
+                if (tool.hidden) continue;
+                if (composioIdentifiers.has(tool.identifier)) continue;
+                officialTools.push({
+                  description: tool.manifest?.meta?.description,
+                  enabled: enabledPlugins.includes(tool.identifier),
+                  identifier: tool.identifier,
+                  installed: true,
+                  name: tool.manifest?.meta?.title || tool.identifier,
+                  type: 'builtin',
+                });
+              }
+
+              // Composio MCP servers — only when Composio is configured for this
+              // deployment. Connection status mirrors the existing
+              // {{COMPOSIO_SERVICES_LIST}} logic (ACTIVE composio plugin rows).
+              if (composioEnv.COMPOSIO_API_KEY) {
+                try {
+                  const pluginModel = new PluginModel(ctx.serverDB, ctx.userId, ctx.workspaceId);
+                  const allPlugins = await pluginModel.query();
+                  const connectedComposioIds = new Set(
+                    allPlugins
+                      .filter(
+                        (p) =>
+                          composioIdentifiers.has(p.identifier) &&
+                          (p.customParams as any)?.composio?.status === 'ACTIVE',
+                      )
+                      .map((p) => p.identifier),
+                  );
+                  for (const t of COMPOSIO_APP_TYPES) {
+                    officialTools.push({
+                      description: `LobeHub Mcp Server: ${t.label}`,
+                      enabled: enabledPlugins.includes(t.identifier),
+                      identifier: t.identifier,
+                      installed: connectedComposioIds.has(t.identifier),
+                      name: t.label,
+                      type: 'composio',
+                    });
+                  }
+                } catch (composioError) {
+                  log('Failed to load Composio status for agentBuilderContext: %O', composioError);
+                }
+              }
+
+              agentBuilderContext = {
+                config: {
+                  chatConfig: editingConfig.chatConfig ?? undefined,
+                  model: editingConfig.model ?? undefined,
+                  openingMessage: editingConfig.openingMessage ?? undefined,
+                  openingQuestions: editingConfig.openingQuestions ?? undefined,
+                  params: editingConfig.params ?? undefined,
+                  plugins: editingConfig.plugins ?? undefined,
+                  provider: editingConfig.provider ?? undefined,
+                  systemRole: editingConfig.systemRole ?? undefined,
+                },
+                meta: {
+                  avatar: editingConfig.avatar ?? undefined,
+                  backgroundColor: editingConfig.backgroundColor ?? undefined,
+                  description: editingConfig.description ?? undefined,
+                  tags: editingConfig.tags ?? undefined,
+                  title: editingConfig.title ?? undefined,
+                },
+                ...(officialTools.length > 0 && { officialTools }),
+              };
+            }
+          } catch (error) {
+            log(
+              'Failed to build agentBuilderContext for editing agent %s: %O',
+              editingAgentId,
               error,
             );
           }
@@ -978,11 +1367,12 @@ export const createRuntimeExecutors = (
 
         const contextEngineInput = {
           agentDocuments,
-          agentGroup: buildBotAgentGroupContext({
-            agentConfig,
-            agentId: state.metadata?.agentId,
-            botContext: state.metadata?.botContext ?? ctx.botContext,
-          }),
+          ...(agentBuilderContext && { agentBuilderContext }),
+          // The group/bot member roster is resolved once at op creation
+          // (AiAgentService.execAgent → buildGroupAgentContext) and snapshotted
+          // into op metadata, mirroring agentConfig/botContext — no per-step DB
+          // lookup here.
+          agentGroup: state.metadata?.agentGroup as AgentGroupConfig | undefined,
           additionalVariables: {
             ...state.metadata?.deviceSystemInfo,
             ...lobehubSkillVariables,
@@ -994,12 +1384,18 @@ export const createRuntimeExecutors = (
             sandbox_enabled: sandboxEnabled,
             sandbox_uploaded_files: sandboxUploadedFiles,
             CREDS_LIST: credsListStr,
-            KLAVIS_SERVICES_LIST: klavisServicesListStr,
+            COMPOSIO_SERVICES_LIST: composioServicesListStr,
             // Memory tool variables
             memory_effort: memoryEffort,
           },
           userTimezone: ctx.userTimezone,
           capabilities: {
+            isCanUseAudio: (m: string, p: string) => {
+              const info =
+                builtinModels.find((item) => item.id === m && item.providerId === p) ??
+                builtinModels.find((item) => item.id === m);
+              return info?.abilities?.audio ?? false;
+            },
             isCanUseFC: (m: string, p: string) => {
               const info = builtinModels.find((item) => item.id === m && item.providerId === p);
               return info?.abilities?.functionCall ?? true;
@@ -1043,8 +1439,9 @@ export const createRuntimeExecutors = (
                 name: kb.name ?? '',
               })),
           },
-          messages: llmPayload.messages as UIChatMessage[],
+          messages: messagesForContext,
           model,
+          modelKnowledgeCutoff,
           provider,
           systemRole: agentConfig.systemRole ?? undefined,
           toolDiscoveryConfig,
@@ -1071,14 +1468,14 @@ export const createRuntimeExecutors = (
           CONTEXT_ENGINEERING_SPAN_NAME,
           {
             attributes: buildContextEngineeringAttributes({
-              hasImages: (llmPayload.messages as Array<{ content?: unknown }>).some(
+              hasImages: (messagesForContext as Array<{ content?: unknown }>).some(
                 (m) =>
                   Array.isArray(m.content) &&
                   (m.content as Array<{ type?: string }>).some((p) => p?.type === 'image_url'),
               ),
               historyCompressed:
-                Array.isArray(llmPayload.messages) &&
-                llmPayload.messages.some((m: { role?: string }) => m?.role === 'compressedGroup'),
+                Array.isArray(messagesForContext) &&
+                messagesForContext.some((m: { role?: string }) => m?.role === 'compressedGroup'),
               knowledgeCount:
                 (contextEngineInput.knowledge?.knowledgeBases?.length ?? 0) +
                 (contextEngineInput.knowledge?.fileContents?.length ?? 0),
@@ -1086,7 +1483,7 @@ export const createRuntimeExecutors = (
                 (contextEngineInput.knowledge?.knowledgeBases?.length ?? 0) > 0 ||
                 (contextEngineInput.knowledge?.fileContents?.length ?? 0) > 0,
               memoryInjected: Boolean(contextEngineInput.userMemory?.memories),
-              messageCount: llmPayload.messages.length,
+              messageCount: messagesForContext.length,
               operationId,
               stepIndex,
               systemRoleLength: contextEngineInput.systemRole?.length,
@@ -1144,6 +1541,9 @@ export const createRuntimeExecutors = (
         model,
         stream,
         tools,
+        // ModelExtendParams keeps provider-specific effort/thinking values as loose
+        // strings (e.g. hy3's 'no_think'); the runtime payload narrows them, so cast.
+        ...(resolvedExtendParams as Partial<ChatStreamPayload>),
         ...(typeof preserveThinkingForPayload === 'boolean' && {
           preserveThinking: preserveThinkingForPayload,
         }),
@@ -1296,6 +1696,10 @@ export const createRuntimeExecutors = (
             const reasoningImageUploads: Promise<void>[] = [];
             let hasContentImages = false;
             let hasReasoningImages = false;
+            // Set when a terminal turn's answer was salvaged from the reasoning
+            // channel (see the answer-in-thinking guard below) — surfaced in
+            // message metadata for observability.
+            let answerSalvagedFromReasoning = false;
             textBuffer = '';
             reasoningBuffer = '';
 
@@ -1566,6 +1970,36 @@ export const createRuntimeExecutors = (
                 throw new ModelEmptyError();
               }
 
+              // Answer-in-thinking salvage: some thinking-mode models — notably
+              // DeepSeek V4 over the Anthropic-compatible API — occasionally emit
+              // the final user-facing answer inside the reasoning channel and stop
+              // naturally with an empty text block. The reasoning is then rendered
+              // as a collapsed "thinking" panel, so the user sees a blank reply.
+              // When a turn ends naturally with no tool calls and no visible
+              // content but non-empty text reasoning, promote the reasoning to be
+              // the answer. This is a backstop; the primary fix is replaying the
+              // real assistant reasoning in history (see modelForcesPreserveThinking
+              // above) which sharply reduces how often the model does this.
+              const isTerminalNaturalStop =
+                currentStepFinishReason === 'end_turn' || currentStepFinishReason === 'stop';
+              if (
+                isTerminalNaturalStop &&
+                toolsCalling.length === 0 &&
+                tool_calls.length === 0 &&
+                content.trim().length === 0 &&
+                thinkingContent.trim().length > 0 &&
+                !hasReasoningImages
+              ) {
+                log(
+                  '[%s] answer-in-thinking salvage: promoting %d chars of reasoning to content',
+                  operationLogId,
+                  thinkingContent.length,
+                );
+                content = thinkingContent;
+                thinkingContent = '';
+                answerSalvagedFromReasoning = true;
+              }
+
               log(
                 `[${operationLogId}] finish model-runtime calling | content: %d chars | reasoning: %d chars | tools: %d | usage: %s`,
                 content.length,
@@ -1639,9 +2073,10 @@ export const createRuntimeExecutors = (
                 };
               }
 
-              const persistedReasoning = shouldPersistAssistantReasoning
-                ? finalReasoning
-                : undefined;
+              // preserveThinking only gates whether reasoning is replayed into the
+              // next LLM payload (state.messages); the DB copy powers UI display
+              // after refresh and must always be saved.
+              const replayedReasoning = shouldReplayAssistantReasoning ? finalReasoning : undefined;
 
               try {
                 // Build metadata object
@@ -1659,6 +2094,9 @@ export const createRuntimeExecutors = (
                 if (hasContentImages) {
                   metadata.isMultimodal = true;
                 }
+                if (answerSalvagedFromReasoning) {
+                  metadata.answerSalvagedFromReasoning = true;
+                }
 
                 // Sanitize tool_call `arguments` before persisting to DB so malformed
                 // JSON (e.g. Qwen emitting `{, ...}`) can't poison future context
@@ -1675,7 +2113,7 @@ export const createRuntimeExecutors = (
                   content: finalContent,
                   imageList: imageList.length > 0 ? imageList : undefined,
                   metadata: Object.keys(metadata).length > 0 ? metadata : undefined,
-                  reasoning: persistedReasoning,
+                  reasoning: finalReasoning,
                   search: grounding,
                   tools: persistedTools,
                 });
@@ -1708,7 +2146,7 @@ export const createRuntimeExecutors = (
               newState.messages.push({
                 content,
                 id: assistantMessageItem.id,
-                reasoning: persistedReasoning,
+                reasoning: replayedReasoning,
                 role: 'assistant',
                 tool_calls: stateToolCalls,
               });
@@ -1949,6 +2387,9 @@ export const createRuntimeExecutors = (
       const dbMessages = await ctx.messageModel.query(
         {
           agentId: state.metadata?.agentId,
+          // Group runs need groupId or the query filters `groupId IS NULL` and
+          // returns no group messages (here the compression candidate set).
+          groupId: state.metadata?.groupId,
           threadId: state.metadata?.threadId,
           topicId,
         },
@@ -2384,7 +2825,7 @@ export const createRuntimeExecutors = (
           execution = { attempts: 1, result: dispatchResult };
         } else {
           // Inject source from sourceMap so BuiltinToolsExecutor can route
-          // lobehubSkill / klavis tools correctly (LLM responses don't carry source)
+          // lobehubSkill / composio tools correctly (LLM responses don't carry source)
           if (toolSource && !chatToolPayload.source) {
             chatToolPayload.source = toolSource;
           }
@@ -2401,7 +2842,16 @@ export const createRuntimeExecutors = (
               toolExecutionService.executeTool(chatToolPayload, {
                 activeDeviceId: state.metadata?.activeDeviceId,
                 agentId: state.metadata?.agentId,
+                agentMember: buildServerAgentMemberRunner(
+                  ctx,
+                  state,
+                  chatToolPayload,
+                  payload.parentMessageId,
+                ),
+                // Assistant message owning this tool call (≠ source user message).
+                assistantMessageId: payload.parentMessageId,
                 documentId: state.metadata?.documentId,
+                editingAgentId: state.metadata?.editingAgentId,
                 execSubAgent: ctx.execSubAgent,
                 executionTimeoutMs: timeoutMs,
                 groupId: state.metadata?.groupId,
@@ -2421,7 +2871,7 @@ export const createRuntimeExecutors = (
                 scope: state.metadata?.scope,
                 serverDB: ctx.serverDB,
                 skipResultTruncation: true,
-                subAgent: buildServerSubAgentRunner(
+                subAgent: buildServerVirtualSubAgentRunner(
                   ctx,
                   state,
                   chatToolPayload,
@@ -2434,6 +2884,10 @@ export const createRuntimeExecutors = (
                 toolResultMaxLength,
                 topicId: ctx.topicId,
                 userId: ctx.userId,
+                // Device-bound cwd folded into deviceSystemInfo at operation
+                // creation; resume-safe via computeDeviceContext (recovers it
+                // from the prior tool message's pluginState.metadata).
+                workingDirectory: state.metadata?.deviceSystemInfo?.workingDirectory,
                 workspaceId: state.metadata?.workspaceId ?? ctx.workspaceId,
               }),
             {
@@ -2559,6 +3013,7 @@ export const createRuntimeExecutors = (
             const toolMessage = await ctx.messageModel.create({
               agentId: state.metadata!.agentId!,
               content: executionResult.content,
+              groupId: state.metadata?.groupId ?? undefined,
               metadata: { toolExecutionTimeMs: executionTime },
               parentId: payload.parentMessageId,
               plugin: chatToolPayload as any,
@@ -2663,14 +3118,15 @@ export const createRuntimeExecutors = (
 
         log('[%s:%d] Tool execution completed', operationId, stepIndex);
 
-        // When the tool result carries an execSubAgent / execSubAgents state the
-        // GeneralChatAgent needs `stop: true` in the payload to detect it and
-        // emit the matching exec_sub_agent / exec_sub_agents instruction.  Without
-        // this flag the agent falls through to the normal LLM-call path and the
-        // sub-agent is never spawned.
-        const execTaskStateType = executionResult.state?.type as string | undefined;
-        const isExecTaskState =
-          execTaskStateType === 'execSubAgent' || execTaskStateType === 'execSubAgents';
+        // When a legacy callAgent task result carries execSubAgent / execSubAgents
+        // state, the GeneralChatAgent needs `stop: true` in the payload to detect
+        // it and emit the matching exec_sub_agent / exec_sub_agents instruction.
+        // Without this flag the agent falls through to the normal LLM-call path
+        // and the background agent run is never spawned.
+        const legacyAgentInvocationStateType = executionResult.state?.type as string | undefined;
+        const isLegacyAgentInvocationState =
+          legacyAgentInvocationStateType === 'execSubAgent' ||
+          legacyAgentInvocationStateType === 'execSubAgents';
 
         executeToolSpan.setAttributes(
           buildExecuteToolResultAttributes({ attempts: execution.attempts, success: isSuccess }),
@@ -2686,7 +3142,7 @@ export const createRuntimeExecutors = (
               isSuccess,
               // Pass tool message ID as parentMessageId for the next LLM call
               parentMessageId: toolMessageId,
-              ...(isExecTaskState && { stop: true }),
+              ...(isLegacyAgentInvocationState && { stop: true }),
               toolCall: chatToolPayload,
               toolCallId: chatToolPayload.id,
             },
@@ -2963,7 +3419,7 @@ export const createRuntimeExecutors = (
               execution = { attempts: 1, result: dispatchResult };
             } else {
               // Inject source from sourceMap so BuiltinToolsExecutor can route
-              // lobehubSkill / klavis tools correctly (LLM responses don't carry source)
+              // lobehubSkill / composio tools correctly (LLM responses don't carry source)
               const batchToolSource =
                 state.operationToolSet?.sourceMap?.[chatToolPayload.identifier] ??
                 state.toolSourceMap?.[chatToolPayload.identifier];
@@ -2982,6 +3438,14 @@ export const createRuntimeExecutors = (
                   toolExecutionService.executeTool(chatToolPayload, {
                     activeDeviceId: state.metadata?.activeDeviceId,
                     agentId: state.metadata?.agentId,
+                    agentMember: buildServerAgentMemberRunner(
+                      ctx,
+                      state,
+                      chatToolPayload,
+                      payload.parentMessageId,
+                    ),
+                    // Assistant message owning this tool call (≠ source user message).
+                    assistantMessageId: payload.parentMessageId,
                     documentId: state.metadata?.documentId,
                     execSubAgent: ctx.execSubAgent,
                     executionTimeoutMs: timeoutMs,
@@ -2993,7 +3457,7 @@ export const createRuntimeExecutors = (
                     scope: state.metadata?.scope,
                     serverDB: ctx.serverDB,
                     skipResultTruncation: true,
-                    subAgent: buildServerSubAgentRunner(
+                    subAgent: buildServerVirtualSubAgentRunner(
                       ctx,
                       state,
                       chatToolPayload,
@@ -3087,6 +3551,7 @@ export const createRuntimeExecutors = (
               const toolMessage = await ctx.messageModel.create({
                 agentId: state.metadata!.agentId!,
                 content: executionResult.content,
+                groupId: state.metadata?.groupId ?? undefined,
                 metadata: { toolExecutionTimeMs: executionTime },
                 parentId: parentMessageId,
                 plugin: chatToolPayload as any,
@@ -3266,6 +3731,11 @@ export const createRuntimeExecutors = (
     const latestMessages = await ctx.messageModel.query(
       {
         agentId: state.metadata?.agentId,
+        // Group runs must pass groupId, else the query falls into the standard
+        // branch (`groupId IS NULL`) and returns zero group messages — the next
+        // call_llm step then gets an empty context and the provider rejects it
+        // ("at least one message is required").
+        groupId: state.metadata?.groupId,
         threadId: state.metadata?.threadId,
         topicId: state.metadata?.topicId,
       },
@@ -3399,6 +3869,7 @@ export const createRuntimeExecutors = (
       const taskMessage = await ctx.messageModel.create({
         agentId: agentId!,
         content: '',
+        groupId: state.metadata?.groupId ?? undefined,
         metadata: {
           instruction: task.instruction,
           taskTitle: task.description,
@@ -3527,6 +3998,7 @@ export const createRuntimeExecutors = (
         const taskMessage = await ctx.messageModel.create({
           agentId: agentId!,
           content: '',
+          groupId: state.metadata?.groupId ?? undefined,
           metadata: {
             instruction: task.instruction,
             taskTitle: task.description,
@@ -3718,6 +4190,9 @@ export const createRuntimeExecutors = (
       try {
         const dbMessages = await ctx.messageModel.query({
           agentId: state.metadata?.agentId,
+          // Group runs need groupId or the query returns no group messages, so
+          // the existing tool-message lookup on resume would find nothing.
+          groupId: state.metadata?.groupId,
           threadId: state.metadata?.threadId,
           topicId: state.metadata?.topicId,
         });
@@ -3750,6 +4225,9 @@ export const createRuntimeExecutors = (
         try {
           const dbMessages = await ctx.messageModel.query({
             agentId: state.metadata?.agentId,
+            // Group runs need groupId or the query returns no group messages, so
+            // the parent-assistant fallback lookup would find nothing.
+            groupId: state.metadata?.groupId,
             threadId: state.metadata?.threadId,
             topicId: state.metadata?.topicId,
           });
@@ -3779,6 +4257,7 @@ export const createRuntimeExecutors = (
           const toolMessage = await ctx.messageModel.create({
             agentId: state.metadata!.agentId!,
             content: '',
+            groupId: state.metadata?.groupId ?? undefined,
             parentId: parentAssistantId,
             plugin: toolPayload as any,
             pluginIntervention: { status: 'pending' },
@@ -3889,6 +4368,7 @@ export const createRuntimeExecutors = (
         const toolMessage = await ctx.messageModel.create({
           agentId: state.metadata!.agentId!,
           content: result.content,
+          groupId: state.metadata?.groupId ?? undefined,
           metadata: { toolExecutionTimeMs: 0 },
           parentId: parentMessageId,
           plugin: toolPayload as any,
@@ -3982,6 +4462,7 @@ export const createRuntimeExecutors = (
         const toolMessage = await ctx.messageModel.create({
           agentId: state.metadata!.agentId!,
           content: 'Tool execution was aborted by user.',
+          groupId: state.metadata?.groupId ?? undefined,
           parentId: parentMessageId,
           plugin: toolPayload as any,
           pluginIntervention: { status: 'aborted' },

@@ -66,7 +66,14 @@ vi.mock('../ProfileEditor/MentionList', () => ({
 }));
 
 vi.mock('../store', () => ({
-  useProfileStore: (selector: any) => selector({ editor, handleContentChange }),
+  useProfileStore: (selector: any) =>
+    selector({
+      editor,
+      handleContentChange,
+      hasEdited: false,
+      lockState: { holderId: null, lockedByOther: false, pending: false },
+      setHasEdited: vi.fn(),
+    }),
 }));
 
 vi.mock('./TypoBar', () => ({
@@ -90,5 +97,12 @@ describe('Agent profile EditorCanvas', () => {
     render(<EditorCanvas />);
 
     expect(editorProps.last?.editable).toBe(false);
+  });
+
+  it('uses the rich-editor placeholder key', () => {
+    render(<EditorCanvas />);
+
+    expect(editorProps.last?.lineEmptyPlaceholder).toBe('settingAgent.prompt.editorPlaceholder');
+    expect(editorProps.last?.placeholder).toBe('settingAgent.prompt.editorPlaceholder');
   });
 });

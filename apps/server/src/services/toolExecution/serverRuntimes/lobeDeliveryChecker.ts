@@ -2,6 +2,7 @@ import { LobeDeliveryCheckerIdentifier } from '@lobechat/builtin-tool-lobe-deliv
 import type { BuiltinServerRuntimeOutput } from '@lobechat/types';
 
 import type { LobeChatDatabase } from '@/database/type';
+import { VerifyPlanGeneratorService } from '@/server/services/verify';
 
 import type { ServerRuntimeRegistration } from './types';
 
@@ -10,6 +11,7 @@ interface LobeDeliveryCheckerRuntimeContext {
   operationId?: string;
   serverDB: LobeChatDatabase;
   userId: string;
+  workspaceId?: string;
 }
 
 const buildError = (content: string, code: string): BuiltinServerRuntimeOutput => ({
@@ -28,11 +30,13 @@ class LobeDeliveryCheckerExecutionRuntime {
   private operationId?: string;
   private db: LobeChatDatabase;
   private userId: string;
+  private workspaceId?: string;
 
   constructor(context: LobeDeliveryCheckerRuntimeContext) {
     this.operationId = context.operationId;
     this.db = context.serverDB;
     this.userId = context.userId;
+    this.workspaceId = context.workspaceId;
   }
 
   generateVerifyPlan = async (params: {
@@ -63,8 +67,7 @@ class LobeDeliveryCheckerExecutionRuntime {
     // Agent-authored path: the model enumerated the checks, so create the
     // criteria + a rubric, snapshot it onto this operation, and confirm it. The
     // tool call is human-reviewed (humanIntervention); this runs post-approval.
-    const { VerifyPlanGeneratorService } = await import('@/server/services/verify');
-    const planGenerator = new VerifyPlanGeneratorService(this.db, this.userId);
+    const planGenerator = new VerifyPlanGeneratorService(this.db, this.userId, this.workspaceId);
     const { items, rubricId } = await planGenerator.createPlanFromCriteria({
       criteria,
       operationId: this.operationId,
@@ -110,6 +113,7 @@ export const lobeDeliveryCheckerRuntime: ServerRuntimeRegistration = {
       operationId: context.operationId,
       serverDB: context.serverDB,
       userId: context.userId,
+      workspaceId: context.workspaceId,
     });
   },
   identifier: LobeDeliveryCheckerIdentifier,

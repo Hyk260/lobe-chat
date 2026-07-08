@@ -19,6 +19,11 @@ export default {
   'workingDirectory.createBranchAction': 'Checkout new branch…',
   'workingDirectory.createBranchTitle': 'Create new branch',
   'workingDirectory.current': 'Current working directory',
+  'workingDirectory.deleteBranchAction': 'Delete branch',
+  'workingDirectory.deleteBranchConfirm':
+    'Delete branch “{{name}}”? This permanently removes it, including any unmerged commits.',
+  'workingDirectory.deleteBranchTitle': 'Delete branch',
+  'workingDirectory.deleteFailed': 'Delete failed',
   'workingDirectory.detachedHead': 'Detached HEAD at {{sha}}',
   'workingDirectory.diffStatTooltip':
     'Added {{added}} · Modified {{modified}} · Deleted {{deleted}}',
@@ -29,6 +34,8 @@ export default {
   'workingDirectory.filesModified': 'Modified',
   'workingDirectory.ghMissing':
     'Install and log in to the GitHub CLI (`gh`) to see linked pull requests',
+  'workingDirectory.heteroHint':
+    'This agent always runs inside a working directory. Until you pick one, it uses a default folder — choose another below to change it.',
   'workingDirectory.newBranchPlaceholder': 'feature/new-branch-name',
   'workingDirectory.noRecent': 'No recent directories',
   'workingDirectory.notSet': 'Click to set working directory',
@@ -50,6 +57,9 @@ export default {
   'workingDirectory.recent': 'Recent',
   'workingDirectory.refreshGitStatus': 'Refresh branch & PR status',
   'workingDirectory.removeRecent': 'Remove from recent',
+  'workingDirectory.renameBranchAction': 'Rename branch',
+  'workingDirectory.renameBranchTitle': 'Rename branch',
+  'workingDirectory.renameFailed': 'Rename failed',
   'workingDirectory.selectFolder': 'Select folder',
   'workingDirectory.title': 'Working Directory',
   'workingDirectory.topicDescription': 'Override Agent default for this conversation only',

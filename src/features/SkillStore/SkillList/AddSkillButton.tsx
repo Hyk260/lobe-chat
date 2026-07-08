@@ -4,14 +4,12 @@ import { ChevronDown, FileArchive, Grid2x2Plus, Link, PenLine } from 'lucide-rea
 import { type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import DevModal from '@/features/PluginDevModal';
+import { CustomConnectorModal } from '@/features/Connectors';
 import { usePermission } from '@/hooks/usePermission';
-import { useAgentStore } from '@/store/agent';
-import { useToolStore } from '@/store/tool';
 
-import ImportFromGithubModal from './ImportFromGithubModal';
-import ImportFromUrlModal from './ImportFromUrlModal';
-import UploadSkillModal from './UploadSkillModal';
+import { openImportFromGithubModal } from './ImportFromGithubModal';
+import { openImportFromUrlModal } from './ImportFromUrlModal';
+import { openUploadSkillModal } from './UploadSkillModal';
 
 const MenuLabel = ({ desc, title }: { desc: string; title: ReactNode }) => (
   <Flexbox gap={2}>
@@ -25,17 +23,8 @@ const MenuLabel = ({ desc, title }: { desc: string; title: ReactNode }) => (
 const AddSkillButton = () => {
   const { t } = useTranslation('setting');
   const [showMcpModal, setMcpModal] = useState(false);
-  const [showUrlModal, setUrlModal] = useState(false);
-  const [showGithubModal, setGithubModal] = useState(false);
-  const [showUploadModal, setUploadModal] = useState(false);
   const { allowed: canCreate } = usePermission('create_content');
   const { allowed: canEdit } = usePermission('edit_own_content');
-
-  const [installCustomPlugin, updateNewDevPlugin] = useToolStore((s) => [
-    s.installCustomPlugin,
-    s.updateNewCustomPlugin,
-  ]);
-  const togglePlugin = useAgentStore((s) => s.togglePlugin);
 
   return (
     <div
@@ -43,19 +32,7 @@ const AddSkillButton = () => {
         e.stopPropagation();
       }}
     >
-      <DevModal
-        open={showMcpModal}
-        onOpenChange={setMcpModal}
-        onValueChange={updateNewDevPlugin}
-        onSave={async (devPlugin) => {
-          if (!canCreate || !canEdit) return;
-          await installCustomPlugin(devPlugin);
-          await togglePlugin(devPlugin.identifier);
-        }}
-      />
-      <ImportFromUrlModal open={showUrlModal} onOpenChange={setUrlModal} />
-      <ImportFromGithubModal open={showGithubModal} onOpenChange={setGithubModal} />
-      <UploadSkillModal open={showUploadModal} onOpenChange={setUploadModal} />
+      <CustomConnectorModal open={showMcpModal} onClose={() => setMcpModal(false)} />
       <DropdownMenu
         nativeButton={false}
         placement="bottomRight"
@@ -67,7 +44,7 @@ const AddSkillButton = () => {
             label: <MenuLabel desc={t('tab.importFromUrl.desc')} title={t('tab.importFromUrl')} />,
             onClick: () => {
               if (!canCreate) return;
-              setUrlModal(true);
+              openImportFromUrlModal();
             },
           },
           {
@@ -79,7 +56,7 @@ const AddSkillButton = () => {
             ),
             onClick: () => {
               if (!canCreate) return;
-              setGithubModal(true);
+              openImportFromGithubModal();
             },
           },
           {
@@ -89,7 +66,7 @@ const AddSkillButton = () => {
             label: <MenuLabel desc={t('tab.uploadZip.desc')} title={t('tab.uploadZip')} />,
             onClick: () => {
               if (!canCreate) return;
-              setUploadModal(true);
+              openUploadSkillModal();
             },
           },
           { type: 'divider' as const },

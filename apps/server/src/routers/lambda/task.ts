@@ -14,6 +14,8 @@ import { TopicModel } from '@/database/models/topic';
 import { workspaceMembers } from '@/database/schemas';
 import { router } from '@/libs/trpc/lambda';
 import { serverDatabase } from '@/libs/trpc/lambda/middleware';
+import { EditLockService } from '@/server/services/editLock';
+import { publishResourceEvent } from '@/server/services/resourceEvents';
 import { TaskService } from '@/server/services/task';
 import { TaskLifecycleService } from '@/server/services/taskLifecycle';
 import { TaskRunnerService } from '@/server/services/taskRunner';
@@ -26,6 +28,7 @@ const taskProcedure = wsCompatProcedure.use(serverDatabase).use(async (opts) => 
     ctx: {
       agentModel: new AgentModel(ctx.serverDB, ctx.userId, wsId),
       briefModel: new BriefModel(ctx.serverDB, ctx.userId, wsId),
+      editLockService: new EditLockService(ctx.userId),
       taskLifecycle: new TaskLifecycleService(ctx.serverDB, ctx.userId, wsId),
       taskModel: new TaskModel(ctx.serverDB, ctx.userId, wsId),
       taskService: new TaskService(ctx.serverDB, ctx.userId, wsId),
@@ -65,9 +68,9 @@ const createSchema = z.object({
 });
 
 const updateSchema = z.object({
-  assigneeAgentId: z.string().nullable().optional(),
-  assigneeUserId: z.string().nullable().optional(),
-  automationMode: z.enum(['heartbeat', 'schedule']).nullable().optional(),
+  assigneeAgentId: z.string().nullish(),
+  assigneeUserId: z.string().nullish(),
+  automationMode: z.enum(['heartbeat', 'schedule']).nullish(),
   config: z.record(z.unknown()).optional(),
   context: z.record(z.unknown()).optional(),
   description: z.string().optional(),
@@ -82,13 +85,13 @@ const updateSchema = z.object({
       message: 'heartbeatInterval must be 0 (disabled) or at least 600 seconds (10 minutes)',
     })
     .optional(),
-  heartbeatTimeout: z.number().min(1).nullable().optional(),
+  heartbeatTimeout: z.number().min(1).nullish(),
   instruction: z.string().optional(),
   name: z.string().optional(),
-  parentTaskId: z.string().nullable().optional(),
+  parentTaskId: z.string().nullish(),
   priority: z.number().min(0).max(4).optional(),
-  schedulePattern: z.string().nullable().optional(),
-  scheduleTimezone: z.string().nullable().optional(),
+  schedulePattern: z.string().nullish(),
+  scheduleTimezone: z.string().nullish(),
 });
 
 const listSchema = z.object({
@@ -96,7 +99,7 @@ const listSchema = z.object({
   limit: z.number().min(1).max(100).default(50),
   offset: z.number().min(0).default(0),
   parentIdentifier: z.string().optional(),
-  parentTaskId: z.string().nullable().optional(),
+  parentTaskId: z.string().nullish(),
   priorities: z.array(z.number().min(0).max(4)).max(5).optional(),
   statuses: z.array(z.enum(TASK_STATUSES)).max(10).optional(),
 });
@@ -114,7 +117,7 @@ const groupListSchema = z.object({
     )
     .min(1)
     .max(10),
-  parentTaskId: z.string().nullable().optional(),
+  parentTaskId: z.string().nullish(),
 });
 
 // Helper: resolve id/identifier and throw if not found
@@ -897,6 +900,63 @@ export const taskRouter = router({
       }
     }),
 
+  getVerifyConfig: taskProcedure.input(idInput).query(async ({ input, ctx }) => {
+    try {
+      const model = ctx.taskModel;
+      const task = await resolveOrThrow(model, input.id);
+      return { data: model.getVerifyConfig(task) || null, success: true };
+    } catch (error) {
+      if (error instanceof TRPCError) throw error;
+      console.error('[task:getVerifyConfig]', error);
+      throw new TRPCError({
+        cause: error,
+        code: 'INTERNAL_SERVER_ERROR',
+        message: 'Failed to get verify config',
+      });
+    }
+  }),
+
+  updateVerifyConfig: taskProcedureWrite
+    .input(
+      idInput.merge(
+        z.object({
+          // `.nullish()` lets callers clear a saved field: `null` removes it
+          // (JSON can't send `undefined`), omission leaves it untouched. See
+          // TaskModel.updateVerifyConfig.
+          verify: z.object({
+            enabled: z.boolean().nullish(),
+            maxIterations: z.number().min(1).max(10).nullish(),
+            requirement: z.string().nullish(),
+            verifierAgentId: z.string().nullish(),
+            verifyCriteriaIds: z.array(z.string()).nullish(),
+            verifyRubricId: z.string().nullish(),
+          }),
+        }),
+      ),
+    )
+    .mutation(async ({ input, ctx }) => {
+      const { id, verify } = input;
+      try {
+        const model = ctx.taskModel;
+        const resolved = await resolveOrThrow(model, id);
+        const task = await model.updateVerifyConfig(resolved.id, verify);
+        if (!task) throw new TRPCError({ code: 'NOT_FOUND', message: 'Task not found' });
+        return {
+          data: model.getVerifyConfig(task),
+          message: 'Verify config updated',
+          success: true,
+        };
+      } catch (error) {
+        if (error instanceof TRPCError) throw error;
+        console.error('[task:updateVerifyConfig]', error);
+        throw new TRPCError({
+          cause: error,
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Failed to update verify config',
+        });
+      }
+    }),
+
   runReview: taskProcedureWrite
     .input(
       idInput.merge(
@@ -927,6 +987,20 @@ export const taskRouter = router({
       const model = ctx.taskModel;
       await assertAssigneeAgentBelongsToUser(ctx.agentModel, data.assigneeAgentId);
       const resolved = await resolveOrThrow(model, id);
+
+      // Collaborative edit lock: reject writes to a workspace task another member
+      // is actively editing. Inert until a client acquires the lock.
+      if (ctx.workspaceId) {
+        const blockedBy = await ctx.editLockService.getBlockingHolder('task', resolved.id);
+        if (blockedBy) {
+          throw new TRPCError({
+            cause: { data: { code: 'DocumentLocked' } },
+            code: 'CONFLICT',
+            message: 'Task is being edited by another user',
+          });
+        }
+      }
+
       const resolvedParentTaskId =
         parentTaskId === undefined
           ? undefined
@@ -945,6 +1019,44 @@ export const taskRouter = router({
         message: 'Failed to update task',
       });
     }
+  }),
+
+  acquireTaskLock: taskProcedureWrite.input(idInput).mutation(async ({ ctx, input }) => {
+    if (!ctx.workspaceId) return { expiresAt: null, holderId: null, lockedByOther: false };
+    const resolved = await resolveOrThrow(ctx.taskModel, input.id);
+    const prev = await ctx.editLockService.getActiveHolder('task', resolved.id);
+    const result = await ctx.editLockService.acquire('task', resolved.id);
+    if ((result.holderId ?? null) !== (prev ?? null)) {
+      void publishResourceEvent(
+        { id: resolved.id, type: 'task' },
+        { actorId: ctx.userId, data: { holderId: result.holderId }, type: 'lock.changed' },
+      );
+    }
+    return result;
+  }),
+
+  getTaskLock: taskProcedureWrite.input(idInput).query(async ({ ctx, input }) => {
+    if (!ctx.workspaceId) return { expiresAt: null, holderId: null, lockedByOther: false };
+    const resolved = await resolveOrThrow(ctx.taskModel, input.id);
+    const holder = await ctx.editLockService.getActiveHolder('task', resolved.id);
+    return {
+      expiresAt: null,
+      holderId: holder ?? null,
+      lockedByOther: Boolean(holder) && holder !== ctx.userId,
+    };
+  }),
+
+  releaseTaskLock: taskProcedureWrite.input(idInput).mutation(async ({ ctx, input }) => {
+    if (!ctx.workspaceId) return;
+    const resolved = await resolveOrThrow(ctx.taskModel, input.id);
+    // Only broadcast "unlocked" when we actually released our own lock — if the
+    // lease expired and another member took over, the lock is still held.
+    const released = await ctx.editLockService.release('task', resolved.id);
+    if (!released) return;
+    void publishResourceEvent(
+      { id: resolved.id, type: 'task' },
+      { actorId: ctx.userId, data: { holderId: null }, type: 'lock.changed' },
+    );
   }),
 
   updateConfig: taskProcedureWrite

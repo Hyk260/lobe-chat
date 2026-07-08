@@ -9,18 +9,25 @@ import type {
   DeviceGitAheadBehind,
   DeviceGitBranchListItem,
   DeviceGitCheckoutResult,
+  DeviceGitDeleteBranchResult,
   DeviceGitLinkedPullRequest,
+  DeviceGitRenameBranchResult,
   DeviceGitSyncResult,
   DeviceGitWorkingTreeStatus,
+  DeviceGitWorktreeListItem,
 } from '@lobechat/types';
 
 import { lambdaClient } from '@/libs/trpc/client';
 import { electronGitService } from '@/services/electron/git';
 
-/** Branch + linked-PR summary, composed from the branch and PR reads. */
-export interface GitInfo {
+/** Current branch + detached-HEAD state for a working directory (cheap read). */
+export interface GitBranchSummary {
   branch?: string;
   detached?: boolean;
+}
+
+/** Linked-PR summary for a branch — the result of the expensive `gh` leg. */
+export interface GitLinkedPRSummary {
   extraCount?: number;
   ghMissing?: boolean;
   pullRequest?: DeviceGitLinkedPullRequest | null;
@@ -64,6 +71,38 @@ class GitService {
       : electronGitService.checkoutGitBranch({ branch, create, path });
   }
 
+  /** Rename a branch in a working directory. */
+  renameGitBranch({
+    deviceId,
+    from,
+    path,
+    to,
+  }: {
+    deviceId?: string;
+    from: string;
+    path: string;
+    to: string;
+  }): Promise<DeviceGitRenameBranchResult> {
+    return deviceId
+      ? lambdaClient.device.renameGitBranch.mutate({ deviceId, from, path, to })
+      : electronGitService.renameGitBranch({ from, path, to });
+  }
+
+  /** Delete a branch in a working directory. */
+  deleteGitBranch({
+    branch,
+    deviceId,
+    path,
+  }: {
+    branch: string;
+    deviceId?: string;
+    path: string;
+  }): Promise<DeviceGitDeleteBranchResult> {
+    return deviceId
+      ? lambdaClient.device.deleteGitBranch.mutate({ branch, deviceId, path })
+      : electronGitService.deleteGitBranch({ branch, path });
+  }
+
   /** Pull (`--ff-only`) the current branch of a working directory. */
   pullGitBranch({
     deviceId,
@@ -91,37 +130,43 @@ class GitService {
   }
 
   /**
-   * Branch + linked PR summary. Composes a branch read with a conditional PR
-   * lookup (skipped for detached HEAD / non-github repos) — both legs dispatch
-   * per `deviceId`, so the gh-CLI lookup runs on whichever machine owns the repo.
+   * Current branch + detached-HEAD state. A cheap local git read, deliberately
+   * split from the linked-PR lookup so the branch label can revalidate promptly
+   * on a working-directory switch without re-triggering the expensive `gh` call.
+   * Dispatches per `deviceId` like every other leg.
    */
-  async getGitInfo({
+  async getGitBranch({
     deviceId,
-    isGithub,
     path,
   }: {
     deviceId?: string;
-    isGithub?: boolean;
     path: string;
-  }): Promise<GitInfo> {
-    const branchInfo = deviceId
+  }): Promise<GitBranchSummary> {
+    const info = deviceId
       ? await lambdaClient.device.gitBranch.query({ deviceId, path })
       : await electronGitService.getGitBranch(path);
-    const branch = branchInfo?.branch;
-    const detached = branchInfo?.detached;
-    if (!branch) return {};
+    return { branch: info?.branch, detached: info?.detached };
+  }
 
-    // Skip the PR lookup for detached HEAD or non-github repos.
-    if (detached || !isGithub) return { branch, detached };
-
+  /**
+   * PR linked to `branch` on a GitHub repo. Shells out to `gh pr list` (8s
+   * timeout), so callers throttle this far more aggressively than the branch
+   * read. Returns `undefined` when nothing is linked / the lookup is skipped.
+   */
+  async getLinkedPullRequest({
+    branch,
+    deviceId,
+    path,
+  }: {
+    branch: string;
+    deviceId?: string;
+    path: string;
+  }): Promise<GitLinkedPRSummary | undefined> {
     const pr = deviceId
       ? await lambdaClient.device.gitLinkedPullRequest.query({ branch, deviceId, path })
       : await electronGitService.getLinkedPullRequest({ branch, path });
-    if (!pr) return { branch, detached };
-
+    if (!pr) return undefined;
     return {
-      branch,
-      detached,
       extraCount: pr.extraCount,
       ghMissing: pr.status === 'gh-missing',
       pullRequest: pr.pullRequest,
@@ -208,6 +253,19 @@ class GitService {
     return deviceId
       ? lambdaClient.device.listGitRemoteBranches.query({ deviceId, path })
       : electronGitService.listGitRemoteBranches(path);
+  }
+
+  /** Git worktrees attached to the same repository as a working directory. */
+  listGitWorktrees({
+    deviceId,
+    path,
+  }: {
+    deviceId?: string;
+    path: string;
+  }): Promise<DeviceGitWorktreeListItem[]> {
+    return deviceId
+      ? lambdaClient.device.listGitWorktrees.query({ deviceId, path })
+      : electronGitService.listGitWorktrees(path);
   }
 
   /** Revert (discard working-tree changes to) a single file in a working directory. */

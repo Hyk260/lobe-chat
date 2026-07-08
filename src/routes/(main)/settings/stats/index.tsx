@@ -1,6 +1,7 @@
 'use client';
 
-import { FormGroup, Grid, Icon, Segmented } from '@lobehub/ui';
+import { FormGroup, Grid, Icon } from '@lobehub/ui';
+import { Tabs } from '@lobehub/ui/base-ui';
 import { ProviderIcon } from '@lobehub/ui/icons';
 import { type DatePickerProps } from 'antd';
 import { DatePicker, Divider } from 'antd';
@@ -10,6 +11,7 @@ import { memo, type ReactNode, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { useClientDataSWR } from '@/libs/swr';
+import { statsKeys } from '@/libs/swr/keys';
 import SettingHeader from '@/routes/(main)/settings/features/SettingHeader';
 import { usageService } from '@/services/usage';
 
@@ -54,7 +56,7 @@ const StatsSetting = memo<StatsSettingProps>(
     const [dateRange, setDateRange] = useState<dayjs.Dayjs>(dayjs(new Date()));
     const [dateStrings, setDateStrings] = useState<string>();
 
-    const { data, isLoading, mutate } = useClientDataSWR('usage-stat', async () =>
+    const { data, isLoading, mutate } = useClientDataSWR(statsKeys.usageStat(), async () =>
       usageService.findAndGroupByDay(dateStrings),
     );
 
@@ -115,32 +117,31 @@ const StatsSetting = memo<StatsSettingProps>(
           extra={
             <>
               <DatePicker picker="month" value={dateRange} onChange={handleDateChange} />
-              <Segmented
+              <Tabs
+                activeKey={groupBy}
                 style={{ marginLeft: 8 }}
-                value={groupBy}
-                variant={'outlined'}
-                options={[
+                items={[
                   {
                     icon: <Icon icon={Brain} />,
+                    key: GroupBy.Model,
                     label: t('usage.welcome.model'),
-                    value: GroupBy.Model,
                   },
                   {
                     icon: <Icon icon={ProviderIcon} />,
+                    key: GroupBy.Provider,
                     label: t('usage.welcome.provider'),
-                    value: GroupBy.Provider,
                   },
                   ...(enableUserDimension
                     ? [
                         {
                           icon: <Icon icon={UserIcon} />,
+                          key: GroupBy.User,
                           label: t('usage.welcome.user'),
-                          value: GroupBy.User,
                         },
                       ]
                     : []),
                 ]}
-                onChange={(v) => setGroupBy(v as GroupBy)}
+                onChange={(key) => setGroupBy(key as GroupBy)}
               />
             </>
           }

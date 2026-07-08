@@ -1,3 +1,4 @@
+import { AGENT_CHAT_TOPIC_URL } from '@lobechat/const';
 import { BarList } from '@lobehub/charts';
 import { ActionIcon, Icon, Modal } from '@lobehub/ui';
 import { cssVar } from 'antd-style';
@@ -6,10 +7,10 @@ import qs from 'query-string';
 import { memo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { SESSION_CHAT_TOPIC_URL } from '@/const/url';
 import { useWorkspaceAwareNavigate } from '@/features/Workspace/useWorkspaceAwareNavigate';
 import Link from '@/libs/router/Link';
 import { useClientDataSWR } from '@/libs/swr';
+import { statsKeys } from '@/libs/swr/keys';
 import { topicService } from '@/services/topic';
 import { useAgentStore } from '@/store/agent';
 import { builtinAgentSelectors } from '@/store/agent/selectors';
@@ -22,7 +23,7 @@ export const TopicsRank = memo<{ mobile?: boolean }>(({ mobile }) => {
   const { t } = useTranslation('auth');
   const navigate = useWorkspaceAwareNavigate();
   const inboxAgentId = useAgentStore(builtinAgentSelectors.inboxAgentId);
-  const { data, isLoading } = useClientDataSWR('rank-topics', async () =>
+  const { data, isLoading } = useClientDataSWR(statsKeys.rankTopics(), async () =>
     topicService.rankTopics(),
   );
 
@@ -32,7 +33,7 @@ export const TopicsRank = memo<{ mobile?: boolean }>(({ mobile }) => {
     // Topics without an agentId fall back to the inbox agent, mirroring the
     // previous `sessionId || INBOX` behavior in the agent-centric model.
     const agentId = item.agentId ?? inboxAgentId;
-    const path = agentId ? SESSION_CHAT_TOPIC_URL(agentId, item.id) : '/';
+    const path = agentId ? AGENT_CHAT_TOPIC_URL(agentId, item.id) : '/';
     const link =
       mobile && agentId
         ? qs.stringifyUrl({ query: { showMobileWorkspace: true }, url: path })

@@ -1,14 +1,23 @@
 'use client';
 
 import { type LobehubSkillProviderType } from '@lobechat/const';
-import { Avatar, Button as LobeButton, DropdownMenu, Flexbox, Icon, Tooltip } from '@lobehub/ui';
+import {
+  Avatar,
+  Button as LobeButton,
+  Center,
+  DropdownMenu,
+  Flexbox,
+  Icon,
+  Tooltip,
+} from '@lobehub/ui';
 import { confirmModal } from '@lobehub/ui/base-ui';
-import { Button } from 'antd';
+import { Badge, Button } from 'antd';
 import { cssVar } from 'antd-style';
 import { Loader2, MoreHorizontalIcon, SquareArrowOutUpRight, Unplug } from 'lucide-react';
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import NavItem from '@/features/NavPanel/components/NavItem';
 import { createLobehubSkillDetailModal } from '@/features/SkillStore/SkillDetail';
 import { usePermission } from '@/hooks/usePermission';
 import { useToolStore } from '@/store/tool';
@@ -22,13 +31,14 @@ const POLL_TIMEOUT_MS = 15_000;
 
 interface LobehubSkillItemProps {
   isSelected?: boolean;
+  onDelete?: () => void;
   onSelect?: () => void;
   provider: LobehubSkillProviderType;
   server?: LobehubSkillServer;
 }
 
 const LobehubSkillItem = memo<LobehubSkillItemProps>(
-  ({ provider, server, isSelected, onSelect }) => {
+  ({ provider, server, isSelected, onSelect, onDelete }) => {
     const { t } = useTranslation('setting');
     const { allowed: canCreate, reason: createReason } = usePermission('create_content');
     const { allowed: canEdit, reason: editReason } = usePermission('edit_own_content');
@@ -175,14 +185,17 @@ const LobehubSkillItem = memo<LobehubSkillItemProps>(
 
     const handleDisconnect = () => {
       if (!canEdit) return;
-      if (!server) return;
       confirmModal({
         cancelText: t('cancel', { ns: 'common' }),
         content: t('tools.lobehubSkill.disconnectConfirm.desc', { name: provider.label }),
         okButtonProps: { danger: true },
         okText: t('tools.lobehubSkill.disconnect'),
         onOk: async () => {
-          await revokeConnect(server.identifier);
+          if (server) {
+            await revokeConnect(server.identifier);
+          } else if (isSelected) {
+            onDelete?.();
+          }
         },
         title: t('tools.lobehubSkill.disconnectConfirm.title', { name: provider.label }),
       });
@@ -271,6 +284,31 @@ const LobehubSkillItem = memo<LobehubSkillItemProps>(
     };
 
     const isConnected = server?.status === LobehubSkillStatus.CONNECTED;
+    const isError = server?.status === LobehubSkillStatus.ERROR;
+
+    if (onSelect) {
+      const renderNavIcon = () => {
+        const { icon, label } = provider;
+        if (typeof icon === 'string') return <Avatar alt={label} avatar={icon} size={18} />;
+        return <Icon fill={cssVar.colorText} icon={icon} size={18} />;
+      };
+      return (
+        <NavItem
+          active={isSelected}
+          icon={renderNavIcon}
+          title={provider.label}
+          titleColor={!isConnected ? cssVar.colorTextDescription : undefined}
+          extra={
+            isError ? (
+              <Center width={18}>
+                <Badge status="error" />
+              </Center>
+            ) : undefined
+          }
+          onClick={onSelect}
+        />
+      );
+    }
 
     return (
       <Flexbox

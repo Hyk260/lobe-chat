@@ -1,18 +1,18 @@
 export default {
   '_cloud.officialProvider': '{{name}} Official Model Service',
   'about.title': 'About',
-  'agentImport.action': 'Import to workspace…',
+  'agentImport.action': 'Copy to Workspace...',
   'agentImport.description':
-    'Fork a copy of this agent into one of your workspaces. The original stays in your personal space — no sync after import.',
-  'agentImport.failed': 'Failed to import agent.',
+    'Create an independent copy in a Workspace. The original Agent stays in your personal account.',
+  'agentImport.failed': 'Failed to copy agent.',
   'agentImport.modal.configIncluded': 'Agent configuration is copied by default.',
-  'agentImport.modal.confirm': 'Import',
+  'agentImport.modal.confirm': 'Copy',
   'agentImport.modal.includeHistory': 'Copy topics and messages',
   'agentImport.modal.includeHistoryDesc':
     'Optional. Copies this agent’s conversation history into the new agent.',
   'agentImport.modal.knowledgeNotice': 'Knowledge bindings and files are not copied yet.',
-  'agentImport.success': 'Agent imported to {{name}}.',
-  'agentImport.title': 'Import to workspace',
+  'agentImport.success': 'Agent copied to {{name}}.',
+  'agentImport.title': 'Copy to Workspace',
   'accountDeletion.cancelButton': 'Cancel Deletion',
   'accountDeletion.cancelConfirmTitle': 'Cancel account deletion request?',
   'accountDeletion.cancelFailed': 'Failed to cancel deletion request',
@@ -339,6 +339,7 @@ export default {
   'creds.view.warning': 'These values are sensitive. Do not share them with others.',
   'devices.actions.edit': 'Edit',
   'devices.actions.remove': 'Remove',
+  'devices.actions.removeSelected': 'Remove ({{count}})',
   'devices.channel.connected': 'Connected {{time}}',
   'devices.currentBadge': 'This device',
   'devices.detail.addDir': 'Add directory',
@@ -353,8 +354,50 @@ export default {
   'devices.edit.friendlyNamePlaceholder': 'A name to recognize this device',
   'devices.edit.save': 'Save',
   'devices.edit.title': 'Edit device',
-  'devices.empty':
-    'No devices yet. Connect one with `lh connect` or by signing in to the desktop app.',
+  'devices.capabilities.commands.desc': 'Safely execute terminal commands in your environment.',
+  'devices.capabilities.commands.title': 'Run commands',
+  'devices.capabilities.files.desc':
+    'Let agents directly access and organize the files on your computer.',
+  'devices.capabilities.files.title': 'Read & write local files',
+  'devices.capabilities.title': 'What you can do once connected',
+  'devices.capabilities.tools.desc': 'Connect local tools to extend what agents can do.',
+  'devices.capabilities.tools.title': 'Call system tools',
+  'devices.connectWizard.button': 'Connect Device',
+  'devices.connectWizard.cli.connectDesc':
+    'Start the background daemon to keep the device online and listening for remote operations.',
+  'devices.connectWizard.cli.connectTitle': 'Start the daemon',
+  'devices.connectWizard.cli.installDesc':
+    'Install the LobeHub CLI globally with your preferred package manager to enable device connectivity and management.',
+  'devices.connectWizard.cli.installTitle': 'Install the CLI',
+  'devices.connectWizard.cli.loginDesc':
+    'Complete OAuth authorization in your browser to link the CLI with your account.',
+  'devices.connectWizard.cli.loginTitle': 'Sign in',
+  'devices.connectWizard.desktop.downloadLink': 'Download LobeHub Desktop',
+  'devices.connectWizard.desktop.step1': 'Download the desktop app',
+  'devices.connectWizard.desktop.step1Desc':
+    'Visit the LobeHub downloads page and get the app for your operating system.',
+  'devices.connectWizard.desktop.step2': 'Sign in and open the device gateway',
+  'devices.connectWizard.desktop.step2Desc':
+    "After signing in, click the device gateway icon in the top-right corner and confirm it's turned on.",
+  'devices.connectWizard.desktop.step3': 'Your device appears automatically',
+  'devices.connectWizard.desktop.step3Desc':
+    "The desktop app registers itself as a device on launch — you'll see it in the list once connected.",
+  'devices.connectWizard.footer':
+    'Only device metadata is registered — your data is never accessed.',
+  'devices.connectWizard.method.cli': 'Via CLI',
+  'devices.connectWizard.method.desktop': 'Via Desktop',
+  'devices.connectWizard.subtitle': 'Choose how to connect your computer to LobeHub.',
+  'devices.connectWizard.title': 'Connect Device',
+  'devices.empty.desc':
+    'Once connected, LobeHub agents can read/write files, run commands, and call system tools directly on your computer.',
+  'devices.empty.methodCli.desc':
+    'Install the CLI in your terminal — great for servers or headless machines.',
+  'devices.empty.methodCli.title': 'Connect via CLI',
+  'devices.empty.methodDesktop.badge': 'Recommended',
+  'devices.empty.methodDesktop.desc':
+    'Download the desktop app, sign in, and your device connects automatically.',
+  'devices.empty.methodDesktop.title': 'Connect via Desktop',
+  'devices.empty.title': 'Connect your first device',
   'devices.fallbackBadge': 'Unstable identity',
   'devices.fallbackTooltip':
     "This device couldn't be identified by its machine ID, so reinstalling the app may create a duplicate entry.",
@@ -362,6 +405,11 @@ export default {
   'devices.remove.confirm': 'Remove this device?',
   'devices.remove.confirmDesc':
     'This disconnects the device from your account. It does not sign the device out, and it can re-register on next connect.',
+  'devices.remove.confirmMany': 'Remove {{count}} devices?',
+  'devices.remove.confirmManyDesc':
+    'This disconnects the selected devices from your account. They are not signed out, and each can re-register on next connect.',
+  'devices.selection.selected': '{{count}} selected',
+  'devices.selection.total': '{{count}} devices',
   'devices.status.offline': 'Offline',
   'devices.status.online': 'Online',
   'devices.title': 'My Devices',
@@ -371,8 +419,8 @@ export default {
   'danger.clear.confirm': "Clear all chat data? This can't be undone.",
   'danger.clear.desc':
     'Delete all data, including agents, files, messages, and skills. Your account will NOT be deleted.',
-  'danger.clear.success': 'All session messages have been cleared',
-  'danger.clear.title': 'Wipe Data',
+  'danger.clear.success': 'All conversation messages have been cleared',
+  'danger.clear.title': 'Clear Data',
   'danger.reset.action': 'Reset Now',
   'danger.reset.confirm': 'Reset all settings?',
   'danger.reset.currentVersion': 'Current Version',
@@ -394,9 +442,9 @@ export default {
   'header.global': 'Global Settings',
   'header.group': 'Group Settings',
   'header.groupDesc': 'Manage group and chat preferences',
-  'header.session': 'Session Settings',
-  'header.sessionDesc': 'Agent Profile and session preferences',
-  'header.sessionWithName': 'Session Settings · {{name}}',
+  'header.session': 'Agent Settings',
+  'header.sessionDesc': 'Agent Profile and chat preferences',
+  'header.sessionWithName': 'Agent Settings · {{name}}',
   'header.title': 'Settings',
   'hotkey.clearBinding': 'Clear binding',
   'hotkey.conflicts': 'Conflicts with existing hotkeys',
@@ -462,7 +510,7 @@ export default {
   'llm.fetcher.noLatestTime': 'No list available yet',
   'llm.helpDoc': 'Configuration Guide',
   'llm.modelList.desc':
-    'Select the models to display in the session. The selected models will be displayed in the model list.',
+    'Select the models to display in conversations. The selected models will be displayed in the model list.',
   'llm.modelList.placeholder': 'Please select a model from the list',
   'llm.modelList.title': 'Model List',
   'llm.modelList.total': '{{count}} models available in total',
@@ -470,73 +518,7 @@ export default {
   'llm.proxyUrl.title': 'API proxy URL',
   'llm.waitingForMore': 'More models are <1>planned to be added</1>, stay tuned',
   'llm.waitingForMoreLinkAriaLabel': 'Open the Provider request form',
-  'marketPublish.forkConfirm.by': 'by {{author}}',
-  'marketPublish.forkConfirm.confirm': 'Confirm Publish',
-  'marketPublish.forkConfirm.confirmGroup': 'Confirm Publish',
-  'marketPublish.forkConfirm.description':
-    'You are about to publish a derivative version based on an existing agent from the community. Your new agent will be created as a separate entry in the marketplace.',
-  'marketPublish.forkConfirm.descriptionGroup':
-    'You are about to publish a derivative version based on an existing group from the community. Your new group will be created as a separate entry in the marketplace.',
-  'marketPublish.forkConfirm.title': 'Publish Derivative Agent',
-  'marketPublish.forkConfirm.titleGroup': 'Publish Derivative Group',
-  'marketPublish.modal.changelog.extra':
-    'Describe the key changes and improvements in this version',
-  'marketPublish.modal.changelog.label': 'Changelog',
-  'marketPublish.modal.changelog.maxLengthError': 'Changelog must not exceed 500 characters',
-  'marketPublish.modal.changelog.placeholder': 'Enter the changelog',
-  'marketPublish.modal.changelog.required': 'Please enter the changelog',
-  'marketPublish.modal.comparison.local': 'Current Local Version',
-  'marketPublish.modal.comparison.remote': 'Currently Published Version',
-  'marketPublish.modal.identifier.extra':
-    'This is the Agent’s unique identifier. Use lowercase letters, numbers, and hyphens.',
-  'marketPublish.modal.identifier.label': 'Agent Identifier',
-  'marketPublish.modal.identifier.lengthError': 'Identifier must be between 3 and 50 characters',
-  'marketPublish.modal.identifier.patternError':
-    'Identifier can only contain lowercase letters, numbers, and hyphens',
-  'marketPublish.modal.identifier.placeholder':
-    'Enter a unique identifier for the agent, e.g., web-development',
-  'marketPublish.modal.identifier.required': 'Please enter the agent identifier',
-  'marketPublish.modal.loading.fetchingRemote': 'Loading remote data...',
-  'marketPublish.modal.loading.submit': 'Submitting Agent...',
-  'marketPublish.modal.loading.submitGroup': 'Submitting Group...',
-  'marketPublish.modal.loading.upload': 'Publishing new version...',
-  'marketPublish.modal.loading.uploadGroup': 'Publishing new group version...',
-  'marketPublish.modal.messages.createVersionFailed': 'Failed to create version: {{message}}',
-  'marketPublish.modal.messages.fetchRemoteFailed': 'Failed to fetch remote agent data',
-  'marketPublish.modal.messages.missingIdentifier':
-    'This Agent doesn’t have a Community identifier yet.',
-  'marketPublish.modal.messages.noGroup': 'No group selected',
-  'marketPublish.modal.messages.notAuthenticated': 'Sign in to your Community account first.',
-  'marketPublish.modal.messages.publishFailed': 'Publish failed: {{message}}',
-  'marketPublish.modal.submitButton': 'Publish',
-  'marketPublish.modal.title.submit': 'Share to Agent Community',
-  'marketPublish.modal.title.upload': 'Publish New Version',
-  'marketPublish.resultModal.message':
-    'Your Agent has been submitted for review. Once approved, it will go live automatically.',
-  'marketPublish.resultModal.messageGroup':
-    'Your Group has been submitted for review. Once approved, it will go live automatically.',
-  'marketPublish.resultModal.title': 'Submission Successful',
-  'marketPublish.resultModal.view': 'View in Community',
   'marketPublish.status.underReview': 'Under Review',
-  'marketPublish.submit.button': 'Share to Community',
-  'marketPublish.submit.tooltip': 'Share this Agent to the Community',
-  'marketPublish.submitGroup.tooltip': 'Share this Group to the Community',
-  'marketPublish.upload.button': 'Publish New Version',
-  'marketPublish.upload.tooltip': 'Publish a new version to Agent Community',
-  'marketPublish.uploadGroup.tooltip': 'Publish a new version to Group Community',
-  'marketPublish.validation.communitySetupRequired.action': 'Set Up Now',
-  'marketPublish.validation.communitySetupRequired.desc':
-    "This workspace hasn't set up its Community profile yet. Set it up before publishing to the Community.",
-  'marketPublish.validation.communitySetupRequired.memberHint':
-    "This workspace hasn't set up its Community profile yet. Ask a workspace owner to set it up before publishing to the Community.",
-  'marketPublish.validation.communitySetupRequired.title': 'Set Up Community Profile First',
-  'marketPublish.validation.confirmPublish': 'Publish to the Market?',
-  'marketPublish.validation.confirmPublishDesc':
-    'Once published, this content will be publicly visible in the market and available for anyone to discover and use.',
-  'marketPublish.validation.emptyName': 'Cannot publish: Name is required',
-  'marketPublish.validation.emptySystemRole': 'Cannot publish: System Role is required',
-  'marketPublish.validation.underReview':
-    'Your new version is currently under review. Please wait for approval before publishing a new version.',
   'memory.effort.desc': 'Control how aggressively the AI retrieves and updates memory.',
   'memory.effort.high': 'High — Proactive retrieval and updates',
   'memory.effort.level.high': 'High',
@@ -563,9 +545,11 @@ export default {
   'notification.category.schedule.title': 'Scheduled tasks',
   'notification.category.workspace.title': 'Workspace',
   'notification.item.agent_cron_job_failed': 'Scheduled task failed',
+  'notification.item.credit_balance_low': 'Credit balance running low',
   'notification.item.image_generation_completed': 'Image generation completed',
   'notification.item.storage_overage_cap_reached': 'Storage pay-as-you-go cap reached',
   'notification.item.video_generation_completed': 'Video generation completed',
+  'notification.item.workspace_member_invited': 'Workspace invitation',
   'notification.item.workspace_member_joined': 'New member joined',
   'notification.item.workspace_member_removed': 'Removed from workspace',
   'notification.item.workspace_payment_failed': 'Renewal payment failed',
@@ -583,14 +567,6 @@ export default {
   'myAgents.actions.deprecateLoading': 'Deprecating agent...',
   'myAgents.actions.deprecateSuccess': 'Agent deprecated',
   'myAgents.actions.edit': 'Edit Agent',
-  'myAgents.actions.publish': 'Publish Agent',
-  'myAgents.actions.publishError': 'Failed to publish agent',
-  'myAgents.actions.publishLoading': 'Publishing agent...',
-  'myAgents.actions.publishSuccess': 'Agent published',
-  'myAgents.actions.unpublish': 'Unpublish Agent',
-  'myAgents.actions.unpublishError': 'Failed to unpublish agent',
-  'myAgents.actions.unpublishLoading': 'Unpublishing agent...',
-  'myAgents.actions.unpublishSuccess': 'Agent unpublished',
   'myAgents.actions.viewDetail': 'View Details',
   'myAgents.detail.category': 'Category',
   'myAgents.detail.description': 'Description',
@@ -619,7 +595,6 @@ export default {
   'plugin.settings.title': '{{id}} Skill Configuration',
   'plugin.settings.tooltip': 'Skill Configuration',
   'plugin.store': 'Skill Store',
-  'publishToCommunity': 'Publish to Community',
   'settingAgent.avatar.sizeExceeded': 'Image size exceeds 1MB limit, please choose a smaller image',
   'settingAgent.avatar.title': 'Avatar',
   'settingAgent.backgroundColor.title': 'Background Color',
@@ -638,21 +613,13 @@ export default {
   'settingAgent.export.untitledFileName': 'agent-profile',
   'settingAgent.name.placeholder': 'Enter agent name',
   'settingAgent.name.title': 'Name',
-  'settingAgent.prompt.placeholder': 'Enter agent settings, press / to open the command menu',
-  'settingAgent.prompt.templatePlaceholder':
-    '#### Goal\n' +
-    'Describe the main purpose and objective of this agent.\n\n' +
-    '#### Skills\n' +
-    '- List the key capabilities\n' +
-    '- And specialized knowledge areas\n\n' +
-    '#### Workflow\n' +
-    '1. Step-by-step process\n' +
-    '2. How the agent should approach tasks\n' +
-    '3. Expected interactions with users\n\n' +
-    '#### Constraints\n' +
-    '- Important limitations to follow\n' +
-    '- Guidelines for behavior',
-  'settingAgent.prompt.title': 'Agent Profile',
+  'settingAgent.prompt.desc':
+    'Defines who this agent is, what it is responsible for, and how it works and responds. It serves as a core instruction in every conversation.',
+  'settingAgent.prompt.editorPlaceholder':
+    'Enter core instructions, press / to open the Slash Menu',
+  'settingAgent.prompt.placeholder': 'Enter agent instructions',
+  'settingAgent.prompt.title': 'Core Instructions',
+  'settingAgent.runtimeConfig.title': 'Model & Tools',
   'settingAgent.submit': 'Update Agent',
   'settingAgent.tag.desc': 'Agent tags will be displayed in the Agent Community',
   'settingAgent.tag.placeholder': 'Enter tag',
@@ -751,14 +718,14 @@ export default {
   'settingGroup.scene.options.productive': 'Productive',
   'settingGroup.scene.title': 'Group scenario',
   'settingGroup.submit': 'Update Group',
-  'settingGroup.systemPrompt.placeholder': 'Please enter the host system prompt',
-  'settingGroup.systemPrompt.title': 'Host System Prompt',
+  'settingGroup.systemPrompt.placeholder': 'Please enter the Orchestrator system prompt',
+  'settingGroup.systemPrompt.title': 'Orchestrator System Prompt',
   'settingGroup.title': 'Group Information',
   'settingGroupChat.allowDM.desc':
     'When turned off, you can still send direct messages to the agent',
   'settingGroupChat.allowDM.title': 'Allow Direct Messages from Agent',
   'settingGroupChat.enableSupervisor.desc':
-    'Enable the moderator feature to manage Group conversations',
+    'Enable the Orchestrator feature to manage Group conversations',
   'settingGroupChat.enableSupervisor.title': 'Enable Orchestrator',
   'settingGroupChat.maxResponseInRow.desc':
     'Select how many consecutive messages a member can reply with. Set to 0 to disable this limit.',
@@ -782,9 +749,10 @@ export default {
   'settingGroupChat.revealDM.title': 'Show Private Messages',
   'settingGroupChat.submit': 'Update Settings',
   'settingGroupChat.systemPrompt.desc':
-    'Custom system prompt for the group chat host. This may affect the default host behavior.',
-  'settingGroupChat.systemPrompt.placeholder': 'Please enter a custom host system prompt...',
-  'settingGroupChat.systemPrompt.title': 'Host System Prompt',
+    'Custom system prompt for the group chat Orchestrator. This may affect the default Orchestrator behavior.',
+  'settingGroupChat.systemPrompt.placeholder':
+    'Please enter a custom Orchestrator system prompt...',
+  'settingGroupChat.systemPrompt.title': 'Orchestrator System Prompt',
   'settingGroupChat.title': 'Chat Settings',
   'settingGroupMembers.addToGroup': 'Add to Group',
   'settingGroupMembers.availableAgents': 'Available Agents',
@@ -958,8 +926,15 @@ export default {
     'Select a voice for the current agent, different TTS services support different voices',
   'settingTTS.voice.preview': 'Voice Preview',
   'settingTTS.voice.title': 'Text-to-Speech Voice',
+  'skillGroup.builtinSkills': 'Built-in Skills',
+  'skillGroup.builtinTools': 'Built-in Tools',
+  'skillGroup.communityConnectors': 'OAuth Connectors',
+  'skillGroup.communitySkills': 'Community Skills',
+  'skillGroup.communityTools': 'Community Tools',
+  'skillGroup.customConnectors': 'Custom Connectors',
+  'skillGroup.customSkills': 'Custom Skills',
   'skillStore.button': 'Skill Store',
-  'skillStore.empty': 'Browse the Skill store. Install one to get started, add more later.',
+  'skillStore.empty': 'Browse the Skill Store. Install one to get started, add more later.',
   'skillStore.emptySearch': 'No matching Skills',
   'skillStore.networkError': 'Network error, please try again',
   'skillStore.search': 'Search skills by name or keyword, press Enter to search…',
@@ -989,20 +964,22 @@ When I am ___, I need ___
   'skillStore.wantMore.feedback.title':
     '[Skill Request] Summarize the skill you need in one sentence',
   'skillStore.wantMore.reachedEnd': "You've reached the end. Can't find what you need?",
+  'skillView.connectors': 'Connectors',
+  'skillView.skills': 'Skills',
   'startConversation': 'Start Conversation',
-  'storage.actions.transfer.button': 'Transfer To',
+  'storage.actions.transfer.button': 'Move to...',
   'storage.actions.transfer.desc':
-    'Move agents and their data to a workspace you have access to. LobeAI, the default inbox Agent, cannot be transferred; use Copy Agents to copy it to a workspace or personal account instead.',
-  'storage.actions.transfer.title': 'Agents Migration',
-  'storage.actions.transferAgentGroups.button': 'Transfer To',
+    'Move agents and their data to another Workspace or your personal account. The originals leave the current space. LobeAI cannot be moved; copy it instead.',
+  'storage.actions.transfer.title': 'Move Agents',
+  'storage.actions.transferAgentGroups.button': 'Move to...',
   'storage.actions.transferAgentGroups.desc':
-    'Move agent groups, their members, and group conversation data to a workspace you have access to.',
-  'storage.actions.transferAgentGroups.title': 'Agent Groups Migration',
-  'storage.actions.copyLobeAI.button': 'Copy To',
+    'Move groups, member Agents, and group conversation data to another Workspace or your personal account.',
+  'storage.actions.transferAgentGroups.title': 'Move Groups',
+  'storage.actions.copyLobeAI.button': 'Copy to...',
   'storage.actions.copyLobeAI.desc':
-    'Copy agents, including LobeAI, into another workspace or personal account. Topics and messages are optional.',
-  'storage.actions.copyLobeAI.title': 'Agents Copy',
-  'storage.actions.copyAgentGroups.button': 'Copy To',
+    'Keep the originals and create independent copies in another Workspace or your personal account. Topics and messages are optional.',
+  'storage.actions.copyLobeAI.title': 'Copy Agents',
+  'storage.actions.copyAgentGroups.button': 'Copy to...',
   'storage.actions.copyAgentGroups.desc':
     'Copy agent groups and their member agents into another workspace or personal account.',
   'storage.actions.copyAgentGroups.title': 'Agent Groups Copy',
@@ -1070,14 +1047,6 @@ When I am ___, I need ___
   'storageOverage.usage.estimatedCharge': 'Est. Cycle Charge',
   'storageOverage.usage.incurredCharge': 'Incurred This Cycle',
   'storageOverage.usage.overage': 'Overage',
-  'submitAgentModal.button': 'Submit Agent',
-  'submitAgentModal.identifier': 'Agent Identifier',
-  'submitAgentModal.metaMiss':
-    'Please complete the agent information before submitting. It should include name, description, and tags',
-  'submitAgentModal.placeholder': 'Enter a unique identifier for the agent, e.g. web-development',
-  'submitAgentModal.success': 'Agent submitted successfully',
-  'submitAgentModal.tooltips': 'Share to Agent Community',
-  'submitGroupModal.tooltips': 'Share to Group Community',
   'sync.device.deviceName.hint': 'Add a name for easy identification',
   'sync.device.deviceName.placeholder': 'Enter device name',
   'sync.device.deviceName.title': 'Device Name',
@@ -1158,6 +1127,9 @@ When I am ___, I need ___
   'tab.about': 'About',
   'tab.advanced': 'Advanced',
   'tab.advanced.appUpdates.title': 'App updates',
+  'tab.advanced.gatewayMode.desc':
+    'Run supported agent tasks through the cloud Gateway by default. Individual agents can override this from the chat menu.',
+  'tab.advanced.gatewayMode.title': 'Gateway Mode',
   'tab.advanced.toolsAndDiagnostics.title': 'Tools and diagnostics',
   'tab.addAgentSkill': 'Add Agent Skill',
   'tab.advanced.updateChannel.canary': 'Canary',
@@ -1217,10 +1189,13 @@ When I am ___, I need ___
   'workspace.create.namePlaceholder': 'e.g. Acme Team',
   'workspace.create.submit': 'Create workspace',
   'workspace.billing.credits.label': 'Credits this month',
-  'workspace.billing.hobbyHint': 'Free workspace · shared monthly pool',
+  'workspace.billing.basicHint': 'Basic workspace · shared monthly pool',
+  'workspace.billing.freeHint': 'Free workspace · shared monthly pool',
   'workspace.billing.platformLine': 'Pro Platform · monthly',
   'workspace.billing.plan.enterprise': 'Enterprise',
-  'workspace.billing.plan.hobby': 'Hobby',
+  'workspace.billing.plan.business': 'Business',
+  'workspace.billing.plan.basic': 'Basic',
+  'workspace.billing.plan.free': 'Free',
   'workspace.billing.plan.pro': 'Pro',
   'workspace.billing.seatLine': 'Additional seats × {{count}}',
   'workspace.billing.seats.cancel': 'Cancel',
@@ -1251,7 +1226,7 @@ When I am ___, I need ___
   'workspace.billing.paymentMethods.setDefaultSuccess': 'Default updated',
   'workspace.billing.paymentMethods.subtitle': 'Cards on file for this workspace.',
   'workspace.billing.paymentMethods.title': 'Payment methods',
-  'workspace.billing.title': 'Bills',
+  'workspace.billing.title': 'Billing',
   'workspace.billing.totalHint': 'Billed monthly · cancel anytime',
   'workspace.billing.totalLabel': 'Total / month',
   'workspace.billingPage.billing.activeHint':
@@ -1261,16 +1236,23 @@ When I am ___, I need ___
   'workspace.billingPage.billing.autoRenewOn': 'Auto-renew on',
   'workspace.billingPage.billing.autoRenewOnDate': 'Renews on {{date}}',
   'workspace.billingPage.billing.banner.cancelledDesc':
-    'Cancellation scheduled. Your subscription stops renewing at the end of the current billing cycle — the workspace then falls back to Hobby.',
+    'Cancellation scheduled. Your subscription stops renewing at the end of the current billing cycle — the workspace then falls back to Free.',
   'workspace.billingPage.billing.banner.cancelledTitle': 'Subscription pending cancellation',
   'workspace.billingPage.billing.banner.expiredDesc':
-    'Your subscription has ended. Re-subscribe to restore Pro features, or downgrade to Solo.',
+    'Your subscription has ended. Re-subscribe to restore Pro features, or downgrade to Free.',
   'workspace.billingPage.billing.banner.expiredTitle': 'Subscription cancelled',
   'workspace.billingPage.billing.banner.inactiveDesc':
     'Subscription is inactive — credits will not refresh until you re-subscribe.',
   'workspace.billingPage.billing.banner.inactiveTitle': 'Subscription inactive',
   'workspace.billingPage.billing.banner.resumeCta': 'Resume',
   'workspace.billingPage.billing.banner.subscribeCta': 'Subscribe',
+  'workspace.billingPage.billing.paymentFailed.desc':
+    'Pay the open invoice or update the default payment method to keep this workspace active.',
+  'workspace.billingPage.billing.paymentFailed.payInvoiceCta': 'Pay invoice',
+  'workspace.billingPage.billing.paymentFailed.title': 'Payment failed',
+  'workspace.billingPage.billing.paymentFailed.updatePaymentMethodCta': 'Update payment method',
+  'workspace.billingPage.billing.paymentFailed.updatePaymentMethodFailed':
+    'Failed to open billing portal.',
   'workspace.billingPage.billing.breakdown.creditsLine_one':
     '{{seats}} seat · {{credits}} credits / month',
   'workspace.billingPage.billing.breakdown.creditsLine_other':
@@ -1282,24 +1264,145 @@ When I am ___, I need ___
   'workspace.billingPage.billing.breakdown.seatCount_one': '{{count}} Seat',
   'workspace.billingPage.billing.breakdown.seatCount_other': '{{count}} Seats',
   'workspace.billingPage.billing.breakdown.totalCost': 'Total Cost',
+  'workspace.billingPage.billing.breakdown.unitPrice': 'Price',
   'workspace.billingPage.billing.cancelConfirm':
     'Subscription will keep running until the end of the current billing cycle, then stop renewing. You can resume at any time before the cycle ends.',
   'workspace.billingPage.billing.cancelCta': 'Cancel subscription',
+  'workspace.billingPage.billing.cancelPlanModal.body':
+    'Your workspace will stay on the current plan until the end of the current billing period, then move to Free.',
+  'workspace.billingPage.billing.cancelPlanModal.bodyWithDate':
+    'Your workspace will stay on the current plan until {{date}}, then move to Free at the end of the current billing period.',
+  'workspace.billingPage.billing.cancelPlanModal.continueCta': 'Continue',
+  'workspace.billingPage.billing.cancelPlanModal.keepCta': 'Keep plan',
+  'workspace.billingPage.billing.cancelPlanModal.limitDesc':
+    'Free workspaces are limited to {{maxSeats}} seats and do not include monthly workspace credits. You can keep using the workspace and upgrade again in the future.',
+  'workspace.billingPage.billing.cancelPlanModal.overLimitDesc':
+    'This workspace currently has {{currentSeats}} billable members. Free supports up to {{maxSeats}} seats. Remove members or change them to {{viewerRole}} before canceling the plan.',
+  'workspace.billingPage.billing.cancelPlanModal.seatLimit': '{{maxSeats}} seats',
+  'workspace.billingPage.billing.cancelPlanModal.title': 'Cancel plan?',
+  'workspace.billingPage.billing.downgradePlanModal.body':
+    'Your current plan will be downgraded to {{targetPlan}} at the end of the current billing period.',
+  'workspace.billingPage.billing.downgradePlanModal.bodyWithDate':
+    'Your current plan will be downgraded to {{targetPlan}} at the end of the current billing period on {{date}}.',
+  'workspace.billingPage.billing.downgradePlanModal.intervalSuffix':
+    ' and switched to {{interval}}',
+  'workspace.billingPage.billing.downgradePlanModal.continueCta': 'Continue',
+  'workspace.billingPage.billing.downgradePlanModal.keepCta': 'Keep plan',
+  'workspace.billingPage.billing.downgradePlanModal.limitDesc':
+    '{{targetPlan}} workspaces support up to {{maxSeats}} seats.',
+  'workspace.billingPage.billing.downgradePlanModal.loseFeatures':
+    'You will lose access to {{currentPlan}} features after that date.',
+  'workspace.billingPage.billing.downgradePlanModal.overLimitDesc':
+    'This workspace currently has {{currentSeats}} billable members. {{targetPlan}} supports up to {{maxSeats}} seats. Remove members or change them to {{viewerRole}} before downgrading.',
+  'workspace.billingPage.billing.downgradePlanModal.seatLimit': '{{maxSeats}} seats',
+  'workspace.billingPage.billing.downgradePlanModal.title':
+    'Are you sure you want to downgrade your plan?',
   'workspace.billingPage.billing.cancelSuccess': 'Cancellation scheduled.',
   'workspace.billingPage.billing.cancelTitle': 'Cancel subscription?',
+  'workspace.billingPage.billing.billingPeriodModal.body':
+    "Your workspace's billing period will be changed from {{current}} to {{target}}.",
+  'workspace.billingPage.billing.billingPeriodModal.cancelCta': 'Cancel',
+  'workspace.billingPage.billing.billingPeriodModal.confirmCta': 'Change billing period',
+  'workspace.billingPage.billing.billingPeriodModal.scheduledChange':
+    'The change will take effect after the current period ends.',
+  'workspace.billingPage.billing.billingPeriodModal.scheduledChangeWithDate':
+    'The change will take effect after the current period ends on {{date}}.',
+  'workspace.billingPage.billing.billingPeriodModal.title': 'Change the billing period?',
+  'workspace.billingPage.billing.change.applyCta': 'Apply changes',
+  'workspace.billingPage.billing.change.cancelScheduledHint':
+    'Resume the subscription before changing plan or seats.',
+  'workspace.billingPage.billing.change.closeWhileSubmitting.closeCta': 'Close anyway',
+  'workspace.billingPage.billing.change.closeWhileSubmitting.continueCta': 'Keep waiting',
+  'workspace.billingPage.billing.change.closeWhileSubmitting.description':
+    "Closing this window won't cancel the request — your subscription update will continue to process in the background.",
+  'workspace.billingPage.billing.change.closeWhileSubmitting.title': 'Request still in progress',
+  'workspace.billingPage.billing.change.currentIntervalTag': 'Current plan',
+  'workspace.billingPage.billing.change.currentPlanWithInterval': 'Current plan',
+  'workspace.billingPage.billing.change.immediateChangeSeatReductionHint':
+    'Reduce seats separately after this immediate plan change.',
+  'workspace.billingPage.billing.change.minPurchasedSeatsHint':
+    'This workspace currently has {{members}} billable members and requires at least {{count}} extra seats.',
+  'workspace.billingPage.billing.change.preview': '{{seats}} seats · {{interval}} billing preview',
+  'workspace.billingPage.billing.change.purchasedSeats': 'Prepaid extra seats',
+  'workspace.billingPage.billing.change.purchasedSeatsWithMax': 'Prepaid seats (max {{max}} seats)',
+  'workspace.billingPage.billing.change.memberLimitReached':
+    'This workspace currently has {{count}} billable members. Remove members or change them to {{viewerRole}} before reducing seats further.',
+  'workspace.billingPage.billing.change.seatReductionHint':
+    'Reducing seats takes effect on the next billing cycle. The current cycle is not refunded.',
+  'workspace.billingPage.billing.change.title': 'Adjust plan',
+  'workspace.billingPage.billing.changeFailed': 'Failed to update subscription.',
+  'workspace.billingPage.billing.changeSuccess': 'Subscription update saved.',
+  'workspace.billingPage.billing.upgradePlanModal.cancelCta': 'Cancel',
+  'workspace.billingPage.billing.upgradePlanModal.checkoutCharge':
+    'You will be redirected to checkout to complete payment.',
+  'workspace.billingPage.billing.upgradePlanModal.currentPurchasedSeats': 'Purchased seats',
+  'workspace.billingPage.billing.upgradePlanModal.buySeatsCta': 'Apply changes',
+  'workspace.billingPage.billing.upgradePlanModal.buySeatsTarget':
+    'Adjust prepaid seats for the {{plan}} {{interval}} plan.',
+  'workspace.billingPage.billing.upgradePlanModal.buySeatsTitle': 'Adjust seats',
+  'workspace.billingPage.billing.upgradePlanModal.confirmCta': 'Upgrade',
+  'workspace.billingPage.billing.upgradePlanModal.currentSeatsLine': 'Current / total seats',
+  'workspace.billingPage.billing.upgradePlanModal.decreaseSeats': 'Decrease seats',
+  'workspace.billingPage.billing.upgradePlanModal.increaseSeats': 'Increase seats',
+  'workspace.billingPage.billing.upgradePlanModal.memberSeatSummary':
+    'This workspace has {{members}} billable members. At least {{count}} extra seats are required.',
+  'workspace.billingPage.billing.upgradePlanModal.noChargeToday': 'No charge today',
+  'workspace.billingPage.billing.upgradePlanModal.paymentMethodFallback': 'Current payment method',
+  'workspace.billingPage.billing.upgradePlanModal.seatLimitReached':
+    'Current plan supports up to {{maxSeats}} seats.',
+  'workspace.billingPage.billing.upgradePlanModal.paymentMethodLabel': 'Payment method',
+  'workspace.billingPage.billing.upgradePlanModal.proratedCharge':
+    'A prorated charge will be applied immediately to your current payment method.',
+  'workspace.billingPage.billing.upgradePlanModal.purchasedSeatsLine': 'Prepaid extra seats',
+  'workspace.billingPage.billing.upgradePlanModal.resultBillingCta': 'View billing',
+  'workspace.billingPage.billing.upgradePlanModal.resultDesc': 'Seat changes saved.',
+  'workspace.billingPage.billing.upgradePlanModal.resultDoneCta': 'Done',
+  'workspace.billingPage.billing.upgradePlanModal.resultInviteCta': 'Invite members',
+  'workspace.billingPage.billing.upgradePlanModal.resultViewMembersCta': 'View members',
+  'workspace.billingPage.billing.upgradePlanModal.resultPaymentCharged':
+    'Prorated charge · Amount in billing',
+  'workspace.billingPage.billing.upgradePlanModal.resultPaymentLabel': 'Payment',
+  'workspace.billingPage.billing.upgradePlanModal.resultPaymentScheduled':
+    'No charge now · Effective next cycle',
+  'workspace.billingPage.billing.upgradePlanModal.resultSeatsExpanded':
+    'Purchased: {{changedSeats}} seats · Total: {{seats}} seats',
+  'workspace.billingPage.billing.upgradePlanModal.resultSeatsLabel': 'Seats',
+  'workspace.billingPage.billing.upgradePlanModal.resultSeatsReduced':
+    'Reduced: {{changedSeats}} seats · Next cycle total: {{seats}} seats',
+  'workspace.billingPage.billing.upgradePlanModal.resultTitle': 'Seats updated',
+  'workspace.billingPage.billing.upgradePlanModal.seatFeeSummary': '${{seatFee}}/month',
+  'workspace.billingPage.billing.upgradePlanModal.seatYearlyFeeSummary': '${{seatFee}}/year',
+  'workspace.billingPage.billing.upgradePlanModal.seatOnlySummary': 'Total {{seats}} seats',
+  'workspace.billingPage.billing.upgradePlanModal.scheduledChange':
+    'This change will take effect after the current billing cycle ends. You will not be charged now.',
+  'workspace.billingPage.billing.upgradePlanModal.scheduledTarget':
+    'Your workspace will change to the {{plan}} {{interval}} plan after the current billing cycle ends.',
+  'workspace.billingPage.billing.upgradePlanModal.purchaseSeats': 'Purchase seats',
+  'workspace.billingPage.billing.upgradePlanModal.seatAdjustment': 'Seat adjustment',
+  'workspace.billingPage.billing.upgradePlanModal.target':
+    'Your workspace will upgrade immediately to the {{plan}} {{interval}} plan.',
+  'workspace.billingPage.billing.upgradePlanModal.todayAmountDesc':
+    'Calculated from the seat adjustment and the remaining time in the current billing cycle.',
+  'workspace.billingPage.billing.upgradePlanModal.todayAmountLabel': 'Estimated due today',
+  'workspace.billingPage.billing.upgradePlanModal.title': 'Upgrade?',
+  'workspace.billingPage.billing.upgradePlanModal.totalSummary': '{{seats}} seats after upgrade',
   'workspace.billingPage.billing.downgrade.confirmBody':
-    'This immediately downgrades the workspace to Solo. The current billing period is non-refundable, and every member except the primary owner will be removed from this workspace.',
+    'The workspace becomes Free right away. Members and shared resources are preserved; the workspace exits the read-only state. Re-subscribe at any time to restore Pro features.',
   'workspace.billingPage.billing.downgrade.confirmCta': 'Downgrade now',
   'workspace.billingPage.billing.downgrade.confirmInputLabel':
     'Type the workspace name "{{name}}" to confirm:',
   'workspace.billingPage.billing.downgrade.confirmInputPlaceholder': 'Workspace name',
-  'workspace.billingPage.billing.downgrade.confirmTitle': 'Downgrade to Solo?',
+  'workspace.billingPage.billing.downgrade.confirmTitle': 'Downgrade to Free?',
   'workspace.billingPage.billing.downgrade.failedToast': 'Failed to downgrade.',
-  'workspace.billingPage.billing.downgrade.successToast': 'Workspace downgraded to Solo.',
-  'workspace.billingPage.billing.hobby.subtitle':
-    'Hobby workspace · shared monthly pool · no team seats',
-  'workspace.billingPage.billing.hobby.title': 'Free workspace',
-  'workspace.billingPage.billing.hobby.upgradeCta': 'Upgrade to Pro',
+  'workspace.billingPage.billing.downgrade.successToast': 'Workspace downgraded to Free.',
+  'workspace.billingPage.billing.basic.subtitle':
+    'Basic workspace · shared monthly pool · no paid seats',
+  'workspace.billingPage.billing.basic.title': 'Basic workspace',
+  'workspace.billingPage.billing.basic.upgradeCta': 'Upgrade to Pro',
+  'workspace.billingPage.billing.free.subtitle':
+    'Free workspace · shared monthly pool · no paid seats',
+  'workspace.billingPage.billing.free.title': 'Free workspace',
+  'workspace.billingPage.billing.free.upgradeCta': 'Upgrade to Pro',
   'workspace.billingPage.billing.invoice.empty':
     'No invoices yet. Your first invoice will appear after the next renewal.',
   'workspace.billingPage.billing.invoice.emptyHint': 'Workspace created on {{date}}.',
@@ -1315,11 +1418,29 @@ When I am ___, I need ___
   'workspace.billingPage.billing.manage.cta': 'Manage',
   'workspace.billingPage.billing.manage.downgradeItem': 'Downgrade',
   'workspace.billingPage.billing.manage.resumeItem': 'Resume subscription',
+  'workspace.billingPage.billing.manage.switchToYearlyItem': 'Switch to yearly',
   'workspace.billingPage.billing.monthlyFeeLabel': '/ month',
+  'workspace.billingPage.billing.intervalFeeLabel': '/ {{interval}}',
   'workspace.billingPage.billing.planBadge.active': 'Active',
   'workspace.billingPage.billing.planBadge.cancelled': 'Cancelled',
   'workspace.billingPage.billing.planBadge.cancelling': 'Cancelling',
+  'workspace.billingPage.billing.planBadge.free': 'Free',
   'workspace.billingPage.billing.planBadge.inactive': 'Inactive',
+  'workspace.billingPage.billing.pending.cancelCta': 'Cancel',
+  'workspace.billingPage.billing.pending.cancelSuccess': 'Subscription change canceled.',
+  'workspace.billingPage.billing.pending.keepPlanCta': 'Keep {{plan}}',
+  'workspace.billingPage.billing.pending.desc':
+    'Switches to {{plan}} {{interval}} on {{date}}. Keep your account balance sufficient.',
+  'workspace.billingPage.billing.pending.descWithSeats':
+    'Switches to {{plan}} {{interval}} with {{seats}} seats on {{date}}. Keep your account balance sufficient.',
+  'workspace.billingPage.billing.pending.disabledActionTooltip':
+    'Cancel the scheduled change first to adjust seats or update your plan.',
+  'workspace.billingPage.billing.pending.seatsDecreaseDesc':
+    'This workspace currently has {{currentSeats}} seats and will change to {{seats}} seats on {{date}}.',
+  'workspace.billingPage.billing.pending.seatsDesc':
+    'Changes to {{seats}} seats on {{date}}. Keep your account balance sufficient.',
+  'workspace.billingPage.billing.pending.seatsTitle': 'Seat change scheduled',
+  'workspace.billingPage.billing.pending.title': 'Plan change scheduled',
   'workspace.billingPage.billing.resumeCta': 'Resume subscription',
   'workspace.billingPage.billing.resumeSuccess':
     'Cancellation reversed. Your subscription will renew normally.',
@@ -1339,8 +1460,10 @@ When I am ___, I need ___
     'Currently {{count}} seats · ${{seatFee}} per extra seat / month',
   'workspace.billingPage.billing.seats.title': 'Seats',
   'workspace.billingPage.billing.subscriptionTitle': 'Subscription controls',
-  'workspace.billingPage.billing.currentPlan.descHobby':
-    'Solo workspace · pay only for what you use',
+  'workspace.billingPage.billing.currentPlan.descBasic': 'Basic workspace for up to 3 members',
+  'workspace.billingPage.billing.currentPlan.descFree': 'Free workspace for up to 3 members',
+  'workspace.billingPage.billing.currentPlan.descBusiness':
+    'Business workspace with expanded credits and larger teams',
   'workspace.billingPage.billing.currentPlan.descPro':
     'Team workspace with monthly credits allowance',
   'workspace.billingPage.billing.currentPlan.title': 'Current plan',
@@ -1355,7 +1478,7 @@ When I am ___, I need ___
   'workspace.billingPage.credits.empty': 'No credit data yet',
   'workspace.billingPage.credits.hero.cycleHint': '{{from}} → {{to}}',
   'workspace.billingPage.credits.hero.percentOfTotal': '{{percent}}% of {{total}}',
-  'workspace.billingPage.credits.hero.planHobby': 'Hobby · solo workspace',
+  'workspace.billingPage.credits.hero.planBasic': 'Basic · 3 free members',
   'workspace.billingPage.credits.hero.planPro_one': 'Pro · {{count}} seat',
   'workspace.billingPage.credits.hero.planPro_other': 'Pro · {{count}} seats',
   'workspace.billingPage.credits.hero.poolDesc':
@@ -1395,8 +1518,10 @@ When I am ___, I need ___
   'workspace.billingPage.credits.status.cancelledDesc':
     'Subscription is scheduled to end on {{date}}. Credits will stop refreshing after that.',
   'workspace.billingPage.credits.balance.creditBalance': 'Top-up credits balance',
-  'workspace.billingPage.credits.balance.hobbyDesc':
-    'Hobby workspaces do not include subscription credits — top up below or upgrade to Pro.',
+  'workspace.billingPage.credits.balance.basicDesc':
+    'Basic workspaces do not include subscription credits — top up below or upgrade to Pro.',
+  'workspace.billingPage.credits.balance.freeDesc':
+    'Free workspaces do not include subscription credits — top up below or upgrade to Pro.',
   'workspace.billingPage.credits.balance.link.history': 'Top-up history',
   'workspace.billingPage.credits.balance.link.usage': 'View usage',
   'workspace.billingPage.credits.balance.plansUsage': 'Subscription credits',
@@ -1449,6 +1574,12 @@ When I am ___, I need ___
   'workspace.billingPage.plans.cancelled': 'Pending cancellation',
   'workspace.billingPage.plans.currentTag': 'Current plan',
   'workspace.billingPage.plans.currentTitle': 'Current plan',
+  'workspace.billingPage.plans.businessTag': 'Higher limits',
+  'workspace.billingPage.plans.businessDesc': 'For growing teams that need higher workspace limits',
+  'workspace.billingPage.plans.businessTagline':
+    'Advanced collaboration and higher workspace limits.',
+  'workspace.billingPage.plans.buyMoreSeatsCta': 'Adjust seats',
+  'workspace.billingPage.plans.billingOwnerOnly': 'Billing owner only',
   'workspace.billingPage.plans.enterprise.contactCta': 'Contact',
   'workspace.billingPage.plans.enterprise.features.brandTheming': 'Brand theming',
   'workspace.billingPage.plans.enterprise.features.commercialLicense': 'Commercial license',
@@ -1467,26 +1598,49 @@ When I am ___, I need ___
   'workspace.billingPage.plans.creditsTitle': 'Workspace credits',
   'workspace.billingPage.plans.creditsTooltip':
     'Workspace-wide monthly credits. Adding seats does NOT grow the pool — overage flows through AutoTopUp.',
+  'workspace.billingPage.plans.capacityOnly': 'Up to {{max}} seats',
+  'workspace.billingPage.plans.downgradeToBasicCta': 'Downgrade',
   'workspace.billingPage.plans.headline': 'Choose a plan',
-  'workspace.billingPage.plans.hobbyCapacity': '1 seat · solo workspace',
-  'workspace.billingPage.plans.hobbyCta': 'Free forever',
-  'workspace.billingPage.plans.hobbyCreditsHint': 'No monthly credits included by default',
-  'workspace.billingPage.plans.hobbyCreditsTooltip':
-    'Hobby workspaces do not include monthly credits. Configure your own model API or top up credits as needed.',
+  'workspace.billingPage.plans.basicCapacity': 'Up to 3 seats',
+  'workspace.billingPage.plans.basicCta': 'Basic',
+  'workspace.billingPage.plans.basicCreditsHint': 'No monthly credits included',
+  'workspace.billingPage.plans.basicCreditsTooltip':
+    'Basic workspaces do not include monthly credits. Configure your own model API or top up credits as needed.',
+  'workspace.billingPage.plans.basicDesc':
+    'For small teams getting started with workspace collaboration',
+  'workspace.billingPage.plans.freeCapacity': 'Up to 3 seats',
+  'workspace.billingPage.plans.freeCreditsHint': 'No monthly credits included',
+  'workspace.billingPage.plans.freeCreditsTooltip':
+    'Free workspaces do not include monthly credits. Configure your own model API or top up credits as needed.',
+  'workspace.billingPage.plans.freeDesc':
+    'For small teams getting started with workspace collaboration',
+  'workspace.billingPage.plans.headerNote.active':
+    'You are on the {{plan}} plan. If you have any questions or would like further support with your plan, <contact>contact us</contact>',
+  'workspace.billingPage.plans.headerNote.renewing':
+    'You are on the {{plan}} plan, renewing {{date}}. If you have any questions or would like further support with your plan, <contact>contact us</contact>',
   'workspace.billingPage.plans.manageSeatsLink': 'Manage seats',
   'workspace.billingPage.plans.modelsHint': 'Estimated messages from the shared pool',
   'workspace.billingPage.plans.modelsTitle': 'Featured models',
   'workspace.billingPage.plans.perMonth': '/ month',
-  'workspace.billingPage.plans.popularTag': 'Popular',
+  'workspace.billingPage.plans.pendingChangeCta': 'Change scheduled',
+  'workspace.billingPage.plans.popularTag': 'Recommended',
   'workspace.billingPage.plans.priceProCaption': 'Platform fee · billed monthly',
+  'workspace.billingPage.plans.priceBusinessHeadline': '${{fee}} / mo',
   'workspace.billingPage.plans.priceProHeadline': '${{fee}} / mo',
+  'workspace.billingPage.plans.priceYearlyHeadline': '${{fee}} / year',
+  'workspace.billingPage.plans.proDesc': 'Designed for professional teams that frequently use AI',
   'workspace.billingPage.plans.proCapacity': 'Up to {{max}} seats · ${{seatFee}}/seat / month',
+  'workspace.billingPage.plans.seatPriceCaption': '${{seatFee}}/seat/month',
+  'workspace.billingPage.plans.switchPlanCta': 'Downgrade',
+  'workspace.billingPage.plans.switchToMonthlyCta': 'Switch to monthly',
+  'workspace.billingPage.plans.switchToYearlyCta': 'Switch to yearly',
   'workspace.billingPage.plans.pricingBannerCta': 'View pricing',
   'workspace.billingPage.plans.pricingBannerDesc':
     'See detailed input/output rates and message estimates for every supported model.',
   'workspace.billingPage.plans.pricingBannerTitle': 'Looking for per-model pricing?',
   'workspace.billingPage.plans.pricingNote': 'For per-model pricing, see {{url}}',
-  'workspace.billingPage.plans.upgradeCta': 'Upgrade to Pro',
+  'workspace.billingPage.plans.upgradeBusinessCta': 'Upgrade',
+  'workspace.billingPage.plans.upgradeCta': 'Upgrade',
   'workspace.billingPage.plans.upgradeFailed': 'Failed to start checkout',
   'workspace.billingPage.summary.cancelling': 'Cancelling',
   'workspace.billingPage.summary.upgradeCta': 'See plans',
@@ -1523,6 +1677,18 @@ When I am ___, I need ___
   'workspace.billingPage.usage.last30': 'Last 30 days',
   'workspace.billingPage.usage.logsTitle': 'Recent activity',
   'workspace.billingPage.usage.member': 'Member',
+  'workspace.billingPage.usage.member.moreMembers_one': '{{count}} more member',
+  'workspace.billingPage.usage.member.moreMembers_other': '{{count}} more members',
+  'workspace.billingPage.usage.member.showLess': 'Show less',
+  'workspace.billingPage.usage.members.desc': 'Billable workspace seats in use',
+  'workspace.billingPage.usage.members.adjustSeats': 'Adjust seats',
+  'workspace.billingPage.usage.members.includedSeats': 'Plan-included seats',
+  'workspace.billingPage.usage.members.purchasedSeats': 'Purchased seats',
+  'workspace.billingPage.usage.members.title': 'Members',
+  'workspace.billingPage.usage.members.unit_one': '{{count}} member',
+  'workspace.billingPage.usage.members.unit_other': '{{count}} members',
+  'workspace.billingPage.usage.members.usedTitle': 'Active members',
+  'workspace.billingPage.usage.members.viewMembers': 'View member list',
   'workspace.billingPage.usage.messages': 'Messages',
   'workspace.billingPage.usage.model.moreModels_one': '{{count}} more model',
   'workspace.billingPage.usage.model.moreModels_other': '{{count}} more models',
@@ -1537,7 +1703,7 @@ When I am ___, I need ___
   'workspace.billingPage.usage.selfTitle': 'Your usage',
   'workspace.billingPage.usage.spend': 'Spend',
   'workspace.billingPage.usage.summaryCardTitle': 'Credits usage statistics',
-  'workspace.billingPage.usage.summaryTitle': 'Workspace credits usage',
+  'workspace.billingPage.usage.summaryTitle': 'Usage',
   'workspace.billingPage.usage.topSpender': 'Top spender: {{name}} ({{amount}})',
   'workspace.billingPage.usage.trendTitle': 'Daily spend trend',
   'workspace.billingPage.usage.trendTooltip': '{{date}}: {{value}}',
@@ -1564,8 +1730,7 @@ When I am ___, I need ___
     'All agents, skills, and their configurations',
   'workspace.general.delete.confirm.warning.items.billing':
     'Subscription, budget settings, and auto top-up',
-  'workspace.general.delete.confirm.warning.items.conversations':
-    'All sessions, messages, topics, and tasks',
+  'workspace.general.delete.confirm.warning.items.conversations': 'All messages, topics, and tasks',
   'workspace.general.delete.confirm.warning.items.files':
     'Uploaded files, generations, and knowledge base data',
   'workspace.general.delete.confirm.warning.items.members':
@@ -1576,7 +1741,7 @@ When I am ___, I need ___
     'This cannot be undone. Spend and top-up history will be retained for audit only.',
   'workspace.general.delete.cta': 'Delete Workspace',
   'workspace.general.delete.description':
-    'Permanently delete this workspace and everything inside it — agents, sessions, messages, files, members, and invitations. This action cannot be reversed.',
+    'Permanently delete this workspace and everything inside it — agents, messages, files, members, and invitations. This action cannot be reversed.',
   'workspace.general.delete.failed': 'Failed to delete workspace',
   'workspace.general.delete.hint':
     'Cancel any active subscription before deletion. Billing history is kept for audit.',
@@ -1602,25 +1767,30 @@ When I am ___, I need ___
     'You will lose access to "{{name}}" immediately. You can rejoin only if you are invited again.',
   'workspace.general.transferAgents.modal.back': 'Back',
   'workspace.general.transferAgents.modal.continue': 'Continue',
-  'workspace.general.transferAgents.modal.failed': 'Failed to transfer agents',
+  'workspace.general.transferAgents.modal.done': 'Done',
+  'workspace.general.transferAgents.modal.failed': 'Failed to move agents',
+  'workspace.general.transferAgents.modal.goToTarget': 'Go to {{target}}',
   'workspace.general.transferAgents.modal.loadFailed': 'Failed to load agents',
   'workspace.general.transferAgents.modal.noAgents': 'No agents in this workspace',
-  'workspace.general.transferAgents.modal.selectAgents': 'Select agents to transfer to {{target}}.',
+  'workspace.general.transferAgents.modal.selectAgents': 'Select Agents to move to {{target}}.',
   'workspace.general.transferAgents.modal.selectPlaceholder':
     'Select workspace or personal account...',
   'workspace.general.transferAgents.modal.selectTarget':
-    'Choose a workspace or personal account to transfer agents to.',
+    'Choose where to move the Agents. They will leave the current space.',
   'workspace.general.transferAgents.modal.selected': 'selected',
-  'workspace.general.transferAgents.modal.selectedAgent': 'Agent to transfer to {{target}}.',
-  'workspace.general.transferAgents.modal.success': '{{count}} agent(s) transferred successfully',
-  'workspace.general.transferAgents.modal.title': 'Transfer Agents',
-  'workspace.general.transferAgents.modal.transfer': 'Transfer {{count}} agent(s)',
+  'workspace.general.transferAgents.modal.selectedAgent':
+    'This Agent will move to {{target}} and leave the current space.',
+  'workspace.general.transferAgents.modal.success': '{{count}} agent(s) moved',
+  'workspace.general.transferAgents.modal.title': 'Move Agents',
+  'workspace.general.transferAgents.modal.transfer': 'Move {{count}} agent(s)',
   'workspace.general.transferAgents.modal.warning':
     'Custom plugins may not be available and multi-agent group associations will be removed.',
   'workspace.general.transferAgents.personalAccount': 'Personal Account',
   'workspace.general.transferAgentGroups.modal.back': 'Back',
   'workspace.general.transferAgentGroups.modal.continue': 'Continue',
+  'workspace.general.transferAgentGroups.modal.done': 'Done',
   'workspace.general.transferAgentGroups.modal.failed': 'Failed to transfer agent groups',
+  'workspace.general.transferAgentGroups.modal.goToTarget': 'Go to {{target}}',
   'workspace.general.transferAgentGroups.modal.loadFailed': 'Failed to load agent groups',
   'workspace.general.transferAgentGroups.modal.noGroups': 'No agent groups in this workspace',
   'workspace.general.transferAgentGroups.modal.selectGroups': 'Select agent groups to transfer.',
@@ -1638,10 +1808,10 @@ When I am ___, I need ___
   'workspace.general.copyLobeAI.modal.back': 'Back',
   'workspace.general.copyLobeAI.modal.continue': 'Continue',
   'workspace.general.copyLobeAI.modal.copyOptions.config.desc':
-    'Required. Copies the model, prompt, tools, and Agent profile.',
+    'Required. Copies the model, prompt, tools, and Agent profile into a new Agent.',
   'workspace.general.copyLobeAI.modal.copyOptions.config.title': 'Agent configuration',
   'workspace.general.copyLobeAI.modal.copyOptions.history.desc':
-    'Optional. Copies selected agents’ topics and messages into the new agents.',
+    'Optional. Copies selected Agents’ topics and messages into the new Agents.',
   'workspace.general.copyLobeAI.modal.copyOptions.history.title': 'Topics and messages',
   'workspace.general.copyLobeAI.modal.copyOptions.knowledgeBase.reason':
     'Not supported yet. Reconnect them in the target workspace or personal account after copying.',
@@ -1652,18 +1822,22 @@ When I am ___, I need ___
   'workspace.general.copyLobeAI.modal.copyOptions.unsupported': 'Unavailable',
   'workspace.general.copyLobeAI.modal.create': 'Copy {{count}} agent(s)',
   'workspace.general.copyLobeAI.modal.defaultInboxTitle': 'LobeAI',
+  'workspace.general.copyLobeAI.modal.done': 'Done',
   'workspace.general.copyLobeAI.modal.failed': 'Failed to copy agents',
+  'workspace.general.copyLobeAI.modal.goToTarget': 'Go to {{target}}',
   'workspace.general.copyLobeAI.modal.includeHistory': 'Copy topics and messages',
   'workspace.general.copyLobeAI.modal.includeHistoryDesc':
-    'Optional. Copies selected agents’ conversation history into the new agents.',
+    'Optional. Copies selected Agents’ conversation history into the new Agents.',
   'workspace.general.copyLobeAI.modal.loadFailed': 'Failed to load agents',
   'workspace.general.copyLobeAI.modal.noAgents': 'No agents available to copy',
   'workspace.general.copyLobeAI.modal.selected': 'selected',
-  'workspace.general.copyLobeAI.modal.selectedAgent': 'Agent to copy.',
-  'workspace.general.copyLobeAI.modal.selectAgents': 'Select agents to copy.',
+  'workspace.general.copyLobeAI.modal.selectedAgent':
+    'This Agent will be copied. The original stays where it is.',
+  'workspace.general.copyLobeAI.modal.selectAgents':
+    'Select Agents to copy. Originals stay where they are.',
   'workspace.general.copyLobeAI.modal.selectPlaceholder': 'Select workspace or personal account...',
   'workspace.general.copyLobeAI.modal.selectTarget':
-    'Choose the target workspace or personal account. Agent configuration is copied by default.',
+    'Choose where to create the copies. The originals stay where they are.',
   'workspace.general.copyLobeAI.modal.success': '{{count}} agent(s) copied',
   'workspace.general.copyLobeAI.modal.title': 'Copy Agents',
   'workspace.general.copyLobeAI.modal.untitledAgent': 'Untitled Agent',
@@ -1684,7 +1858,9 @@ When I am ___, I need ___
   'workspace.general.copyAgentGroups.modal.copyOptions.title': 'Copy options',
   'workspace.general.copyAgentGroups.modal.copyOptions.unsupported': 'Unavailable',
   'workspace.general.copyAgentGroups.modal.create': 'Copy {{count}} agent group(s)',
+  'workspace.general.copyAgentGroups.modal.done': 'Done',
   'workspace.general.copyAgentGroups.modal.failed': 'Failed to copy agent groups',
+  'workspace.general.copyAgentGroups.modal.goToTarget': 'Go to {{target}}',
   'workspace.general.copyAgentGroups.modal.loadFailed': 'Failed to load agent groups',
   'workspace.general.copyAgentGroups.modal.noGroups': 'No agent groups available to copy',
   'workspace.general.copyAgentGroups.modal.selectGroups': 'Select agent groups to copy.',
@@ -1793,6 +1969,7 @@ When I am ___, I need ___
     'You are about to remove the following member from the workspace, are you sure you want to continue?',
   'workspace.member.removeConfirm.title': 'Remove Workspace Member',
   'workspace.member.removeSuccess': 'Member removed from workspace successfully.',
+  'workspace.member.roles.basicBadge': 'Basic',
   'workspace.member.roles.freeBadge': 'Free',
   'workspace.member.roles.member': 'Member',
   'workspace.member.roles.memberDescription':
@@ -1825,7 +2002,7 @@ When I am ___, I need ___
   'workspace.invitePage.invitedEmail': 'Invited email',
   'workspace.invitePage.invitedTo': '{{inviter}} invited you to join the workspace',
   'workspace.invitePage.memberLimitSubtitle':
-    'This workspace already has {{limit}} members. Ask an owner to remove a member before joining.',
+    'This workspace is full. Ask an owner to adjust seats in Billing or remove a member before joining.',
   'workspace.invitePage.memberLimitTitle': 'Workspace Is Full',
   'workspace.invitePage.notFoundSubtitle':
     'This invitation link is invalid. Double-check the URL or ask the team owner to send a new one.',
@@ -1870,8 +2047,6 @@ When I am ___, I need ___
     '{{success}} invited, {{failed}} failed. Check the addresses and try again.',
   'workspace.members.invite.success': 'Team members invited successfully.',
   'workspace.members.invite.title': 'Invite Members',
-  'workspace.members.invite.upgradeCta': 'Upgrade',
-  'workspace.members.invite.upgradeHint': 'This feature is available on the Pro plan.',
   'workspace.members.pending.empty': 'No pending invitations',
   'workspace.members.pending.expiresAt': 'Expires {{date}}',
   'workspace.members.pending.resend': 'Resend',
@@ -1880,35 +2055,40 @@ When I am ___, I need ___
   'workspace.members.pending.revoke': 'Revoke',
   'workspace.members.pending.revokeConfirm.content': 'The invitation link will no longer be valid.',
   'workspace.members.pending.revokeConfirm.title': 'Revoke this invitation?',
+  'workspace.members.seatChange.memberJoinBlocked':
+    'Current members have reached the scheduled seat limit, so new paid members may not be able to join this workspace',
   'workspace.members.subtitle': 'Manage workspace members and invitations',
   'workspace.members.tabs.members': 'Team Members',
   'workspace.members.tabs.pending': 'Pending Invitations',
   'workspace.members.title': 'Members',
   'workspace.name.placeholder': 'Workspace name',
   'workspace.name.title': 'Name',
-  'workspace.newWorkspace': 'New workspace',
+  'workspace.newWorkspace': 'New Workspace',
   'workspace.personalTag': 'Personal',
   'workspace.switchWorkspace': 'Switch workspace',
   'workspace.upgradeModal.alreadyUpgraded': 'Already upgraded',
   'workspace.upgradeModal.changeWorkspace': 'Back',
   'workspace.upgradeModal.chargeDisclosure':
-    'Upon clicking Upgrade, you will be charged ${{fee}}, plus any applicable taxes and fees, immediately and then every month, until you cancel. Seat fees and on-demand usage are settled at month-end; if your usage exceeds a billing threshold during a cycle, your payment method on file may be charged before the cycle ends.',
+    'Clicking Upgrade charges ${{fee}} now, plus any applicable taxes. The subscription renews on the selected {{interval}} cycle until you cancel.',
   'workspace.upgradeModal.inviteLaterHint':
     'You can invite more members to your team in the next step.',
   'workspace.upgradeModal.memberCount_one': '{{count}} member',
   'workspace.upgradeModal.memberCount_other': '{{count}} members',
   'workspace.upgradeModal.memberIncluded': 'Included',
   'workspace.upgradeModal.ownerTag': 'Owner',
-  'workspace.upgradeModal.totalPerMonth': '${{amount}} / month',
+  'workspace.upgradeModal.totalPerMonth': '${{amount}} / {{interval}}',
   'workspace.upgradeModal.youLabel': 'You',
   'workspace.upgradeModal.continueCta': 'Continue',
   'workspace.upgradeModal.createTeam': 'Create workspace',
   'workspace.upgradeModal.formSubtitle':
-    'Only the platform fee is charged today — seat fees are settled at month-end.',
-  'workspace.upgradeModal.formTitle': 'Upgrade {{name}} to Pro',
-  'workspace.upgradeModal.heading': 'Upgrade a workspace to Pro',
-  'workspace.upgradeModal.hobbyTag': 'Hobby',
-  'workspace.upgradeModal.noHobbyHint': "You don't own any Hobby workspaces to upgrade.",
+    'The platform fee includes 3 seats. Extra seats can be prepaid from billing settings.',
+  'workspace.upgradeModal.formDescription': 'Review the details below and confirm your upgrade.',
+  'workspace.upgradeModal.formTitle': 'Upgrade {{name}} to {{plan}}',
+  'workspace.upgradeModal.heading': 'Upgrade a workspace',
+  'workspace.upgradeModal.basicTag': 'Basic',
+  'workspace.upgradeModal.freeTag': 'Free',
+  'workspace.upgradeModal.noBasicHint': "You don't own any Basic workspaces to upgrade.",
+  'workspace.upgradeModal.noFreeHint': "You don't own any Free workspaces to upgrade.",
   'workspace.upgradeModal.payFailed': 'Failed to start checkout',
   'workspace.upgradeModal.pickerLabel': 'Select a workspace',
   'workspace.upgradeModal.proTag': 'Pro',
@@ -1936,7 +2116,7 @@ When I am ___, I need ___
   'workspace.upgradeModal.successPage.skipCta': 'Skip for now',
   'workspace.upgradeModal.successPage.title': 'Upgrade complete',
   'workspace.upgradeModal.successToast': 'Upgrade complete — refreshing your plan…',
-  'workspace.upgradeModal.title': 'Upgrade to Pro',
+  'workspace.upgradeModal.title': 'Upgrade workspace',
   'workspace.upgradeModal.upgradeButton': 'Upgrade',
   'workspace.wizard.back': 'Back',
   'workspace.wizard.cancel': 'Cancel',
@@ -1958,7 +2138,8 @@ When I am ___, I need ___
   'workspace.wizard.step1.name.label': 'Workspace name',
   'workspace.wizard.step1.name.placeholder': 'Example Team',
   'workspace.wizard.step1.name.required': 'Workspace name is required',
-  'workspace.wizard.step1.slug.available': 'This URL is available',
+  'workspace.wizard.step1.slug.available':
+    'This URL is available. You can change it later in Settings.',
   'workspace.wizard.step1.slug.checking': 'Checking availability…',
   'workspace.wizard.step1.slug.invalidBrandProtected':
     'This workspace URL is associated with a protected brand. Please apply from your organization email.',
@@ -1970,69 +2151,89 @@ When I am ___, I need ___
   'workspace.wizard.step1.slug.invalidReserved': 'That slug is reserved. Please choose another.',
   'workspace.wizard.step1.slug.label': 'Workspace URL',
   'workspace.wizard.step1.slug.placeholder': 'example-team',
-  'workspace.wizard.step1.slug.prefix': 'lobehub.com/',
   'workspace.wizard.step1.slug.required': 'Workspace URL is required',
   'workspace.wizard.step1.slug.taken': 'This URL is already taken',
   'workspace.wizard.step1.subtitle': 'Unlock Agent Collaboration With Your Teammates',
   'workspace.wizard.step1.title': 'Workspace details',
-  'workspace.wizard.step2.billing.freeSummary': 'Solo workspace · free',
-  'workspace.wizard.step2.billing.inviteAfterCreateHint':
-    'Invite teammates after creating this workspace.',
-  'workspace.wizard.step2.billing.platformLine': 'Pro platform · monthly',
+  'workspace.wizard.step2.billing.basicSummary': 'Up to 3 members · free',
+  'workspace.wizard.step2.billing.freeSummary': 'Up to 3 members · free',
+  'workspace.wizard.step2.billing.extraSeatsLine': 'Additional prepaid seats',
+  'workspace.wizard.step2.billing.includedSeatsLine': 'Included seats',
+  'workspace.wizard.step2.billing.includedSeatsValue': '{{count}} seats included',
+  'workspace.wizard.step2.billing.platformLine': '{{plan}} platform · {{interval}}',
   'workspace.wizard.step2.billing.seatLine': 'Additional seats × {{count}}',
   'workspace.wizard.step2.billing.seatPostpaidNote':
-    'Seats are billed at month-end: ${{seatFee}}/seat/month, based on actual use.',
+    'First {{includedSeats}} seats included · up to {{maxSeats}} seats · {{interval}} billing.',
   'workspace.wizard.step2.billing.title': 'Cost details',
   'workspace.wizard.step2.billing.total': 'Total',
-  'workspace.wizard.step2.billing.totalFreeHint': 'Free for a solo workspace.',
-  'workspace.wizard.step2.billing.totalMonthHint': 'Platform fee today · seats billed at month-end',
+  'workspace.wizard.step2.billing.totalBasicHint': 'Free for the first 3 members.',
+  'workspace.wizard.step2.billing.totalFreeHint': 'Free for the first 3 members.',
+  'workspace.wizard.step2.billing.totalMonthHint': 'Platform fee today · includes 3 seats',
   'workspace.wizard.step2.chargeDisclosure':
-    'Confirming creates this workspace on Pro and charges ${{fee}} now, plus any applicable taxes. The subscription renews monthly until you cancel. Seats and on-demand usage are billed at month-end.',
+    'Confirming creates this workspace on {{plan}} and charges ${{fee}} now, plus any applicable taxes. The subscription renews on the selected {{interval}} cycle until you cancel.',
   'workspace.wizard.step2.confirmPurchase': 'Confirm purchase',
   'workspace.wizard.step2.createFailed': 'Failed to create workspace',
   'workspace.wizard.step2.details.description': "See what's included in your selected plan.",
   'workspace.wizard.step2.details.title': 'Plan Details',
+  'workspace.wizard.step2.createBasic': 'Create workspace',
   'workspace.wizard.step2.createFree': 'Create workspace',
   'workspace.wizard.step2.createdToast': 'Workspace {{name}} created.',
-  'workspace.wizard.step2.hobbyAgreement':
-    'Hobby is free to create and has no monthly credits. Top-ups or AutoTopUp are billed only after you confirm them.',
+  'workspace.wizard.step2.basicAgreement':
+    'The Basic plan has no monthly credits. Top-ups or AutoTopUp are billed only after you confirm them.',
+  'workspace.wizard.step2.freeAgreement':
+    'The Free plan has no monthly credits. Top-ups or AutoTopUp are billed only after you confirm them.',
   'workspace.wizard.step2.header.description': 'Each workspace is billed separately.',
   'workspace.wizard.step2.header.title': 'Select Your Plan',
+  'workspace.wizard.step2.basicLimitReached':
+    "You've reached the basic workspace limit ({{limit}}). Upgrade to Pro to create more.",
   'workspace.wizard.step2.freeLimitReached':
     "You've reached the free workspace limit ({{limit}}). Upgrade to Pro to create more.",
   'workspace.wizard.step2.totalLimitReached':
     "You've reached the maximum of {{limit}} workspaces. Leave one before creating another.",
-  'workspace.wizard.step2.features.hobby.share': 'Single-owner workspace',
-  'workspace.wizard.step2.features.hobby.solo': 'Solo workspace, no member seats',
-  'workspace.wizard.step2.features.hobby.onDemand': 'On-demand usage · AutoTopUp (${{price}}/M)',
-  'workspace.wizard.step2.features.hobby.upgradable': 'Upgrade anytime to invite members',
+  'workspace.wizard.step2.features.basic.share': 'First 3 members are free, including you',
+  'workspace.wizard.step2.features.basic.members': 'Up to 3 members, no paid seats',
+  'workspace.wizard.step2.features.basic.onDemand':
+    'On-demand usage · Auto top-up (${{price}} / 1M credits)',
+  'workspace.wizard.step2.features.basic.upgradable': 'Upgrade anytime for more seats',
+  'workspace.wizard.step2.features.free.share': 'First 3 members are free, including you',
+  'workspace.wizard.step2.features.free.members': 'Up to 3 members, no paid seats',
+  'workspace.wizard.step2.features.free.onDemand':
+    'On-demand usage · Auto top-up (${{price}} / 1M credits)',
+  'workspace.wizard.step2.features.free.upgradable': 'Upgrade anytime for more seats',
   'workspace.wizard.step2.features.pro.adminControls': 'Centralized billing, roles, and audit logs',
   'workspace.wizard.step2.features.pro.collaboration': 'Invite members · share agents and files',
-  'workspace.wizard.step2.features.pro.onDemand': 'On-demand usage · AutoTopUp (${{price}}/M)',
+  'workspace.wizard.step2.features.pro.onDemand':
+    'On-demand usage · Auto top-up (${{price}} / 1M credits)',
   'workspace.wizard.step2.features.pro.priorityModels': 'Priority premium models',
   'workspace.wizard.step2.features.pro.support': 'Priority email support',
-  'workspace.wizard.step2.left.creditsHobbyHint': 'No monthly credits · pay as you go',
+  'workspace.wizard.step2.left.creditsBasicHint': 'No monthly credits · pay as you go',
   'workspace.wizard.step2.left.creditsLabel': 'Credits per month',
   'workspace.wizard.step2.left.creditsProHint': 'Shared workspace pool · seats do not add credits',
-  'workspace.wizard.step2.left.freeHeadline': 'Solo workspace',
-  'workspace.wizard.step2.left.freeTagline': 'For individual use. Upgrade later to invite members.',
+  'workspace.wizard.step2.left.basicHeadline': 'Basic workspace',
+  'workspace.wizard.step2.left.basicTagline': 'For up to 3 members. Upgrade later for more seats.',
   'workspace.wizard.step2.left.headline': 'Team workspace',
-  'workspace.wizard.step2.left.hobbyTopUpHint':
+  'workspace.wizard.step2.left.basicTopUpHint':
     'Top up anytime: ${{price}}/M ({{percent}}% above base, with no subscription fee)',
   'workspace.wizard.step2.left.proTagline': '${{fee}}/seat/month. Extra usage is billed on demand.',
   'workspace.wizard.step2.left.proTopUpHint':
     'Top up when credits run low: ${{price}}/M ({{percent}}% off the standard rate)',
   'workspace.wizard.step2.payFailed': 'Failed to start checkout',
+  'workspace.wizard.step2.pill.basic': 'Basic',
+  'workspace.wizard.step2.pill.basicUsed': '{{used}}/{{limit}} used',
   'workspace.wizard.step2.pill.free': 'Free',
   'workspace.wizard.step2.pill.freeUsed': '{{used}}/{{limit}} used',
-  'workspace.wizard.step2.pill.proPerSeat': '${{fee}} / seat / month',
-  'workspace.wizard.step2.plans.hobby': 'Hobby',
+  'workspace.wizard.step2.pill.platformPerMonth': '${{fee}} / month',
+  'workspace.wizard.step2.pill.seatPerMonth': '+${{fee}} / seat / month',
+  'workspace.wizard.step2.plans.business': 'Business',
+  'workspace.wizard.step2.plans.basic': 'Basic',
+  'workspace.wizard.step2.plans.free': 'Free',
   'workspace.wizard.step2.plans.pro': 'Pro',
   'workspace.wizard.step2.seats.hint': 'Between {{min}} and {{max}} seats.',
   'workspace.wizard.step2.seats.label': 'Seats',
   'workspace.wizard.step2.subtitle':
     'Each workspace is billed separately. Choose a plan to finish.',
   'workspace.wizard.step2.title': 'Choose plan',
+  'workspace.wizard.step2.yearlyDiscount': '-20%',
   'workspace.wizard.step3.addMore': 'Add more',
   'workspace.wizard.step3.allFailed': 'Could not send invitations',
   'workspace.wizard.step3.emailPlaceholder': 'name@company.com',
@@ -2125,20 +2326,49 @@ When I am ___, I need ___
   'workspace.onboarding.step3.skipInstall': "Don't install any",
   'workspace.onboarding.step3.installed': 'Added {{count}} agent(s) to your workspace',
   'workspace.onboarding.step3.empty': 'No recommendations available right now.',
+  'workspace.onboarding.step4Invite.addMore': 'Add another email',
+  'workspace.onboarding.step4Invite.emailPlaceholder': 'teammate@company.com',
+  'workspace.onboarding.step4Invite.finish': 'Finish',
+  'workspace.onboarding.step4Invite.heading': 'Invite your team',
+  'workspace.onboarding.step4Invite.invitedCount': 'Invited {{count}} member(s)',
+  'workspace.onboarding.step4Invite.subtitle':
+    'Bring teammates into this workspace now, or invite them later from member settings.',
+  'workspace.onboarding.step4Invite.subtitleWithExtraSeats':
+    'Your plan includes {{includedSeats}} free seats and supports up to {{maxSeats}} seats with purchased extra seats. Invite teammates now, or add them later from member settings.',
+  'workspace.onboarding.step4Invite.subtitleWithLimit':
+    'Free includes up to {{maxSeats}} seats, including you. Invite teammates now, or add them later from member settings.',
+  'workspace.onboarding.step4.heading': '{{name}} is ready!',
+  'workspace.onboarding.step4.subtitle':
+    'Your workspace is set up. Jump in and start collaborating with your team.',
+  'workspace.onboarding.step4.subtitleWithAgents':
+    '{{count}} agent(s) ready to help. Jump in and start collaborating with your team.',
+  'workspace.onboarding.step4.cta': 'Enter workspace',
   'workspaceSetting.breadcrumb.settings': 'Settings',
+  'workspaceSetting.devices.desc':
+    'Shared machines enrolled into this workspace. Members can run agents on them.',
+  'workspaceSetting.devices.empty': 'No workspace devices yet.',
+  'workspaceSetting.devices.enrollDesc':
+    'Run this on the machine you want to share with the workspace:',
+  'workspaceSetting.devices.enrolledBy': 'Enrolled by {{name}}',
+  'workspaceSetting.devices.enrolledByLabel': 'Enrolled by',
+  'workspaceSetting.devices.enrollTitle': 'Add a device',
+  'workspaceSetting.devices.heroDesc':
+    'Enroll a shared machine — a build server or a team Mac — and every member can run agents on it: read/write files, run commands, and call system tools.',
+  'workspaceSetting.devices.heroTitle': 'Connect your first workspace device',
+  'workspaceSetting.devices.offline': 'Offline',
+  'workspaceSetting.devices.online': 'Online',
+  'workspaceSetting.devices.readonlyHint':
+    'Only the member who enrolled this device or a workspace owner can rename or remove it.',
+  'workspaceSetting.devices.unknownEnroller': 'an unknown member',
   'workspaceSetting.group.admin': 'Admin',
   'workspaceSetting.group.agent': 'Agent',
   'workspaceSetting.group.general': 'General',
-  'workspaceSetting.group.subscription': 'Plans',
-  'workspaceSetting.tab.billing': 'Bills',
-  'workspaceSetting.tab.credits': 'Credits',
   'workspaceSetting.tab.general': 'General',
   'workspaceSetting.tab.members': 'Members',
-  'workspaceSetting.tab.plans': 'Plans',
   'workspaceSetting.storage.comingSoon': 'Workspace-scoped data import & export is coming soon.',
   'workspaceSetting.storage.danger.clear.desc':
     'Delete all data in this workspace, including agents, files, messages, and skills. The workspace itself will NOT be deleted.',
-  'workspaceSetting.storage.danger.clear.title': 'Wipe Workspace Data',
+  'workspaceSetting.storage.danger.clear.title': 'Clear Workspace Data',
   'workspaceSetting.storage.danger.reset.desc':
     'Restore all workspace settings to defaults. Workspace data will not be deleted.',
   'workspaceSetting.storage.danger.reset.title': 'Reset Workspace Settings',
@@ -2146,9 +2376,9 @@ When I am ___, I need ___
     'Help us improve {{appName}} with anonymous workspace usage data',
   'workspaceSetting.storage.telemetry.title': 'Send Anonymous Workspace Usage Data',
   'workspaceSetting.tab.skill': 'Skills',
-  'workspaceSetting.tab.usage': 'Usage',
   'tools.add': 'Add Skill',
-  'tools.addSkillOrConnector': 'Add Skills / Connector',
+  'tools.addSkillOrConnector': 'Add Skills / Connectors',
+  'tools.noConfigurablePermissions': 'This skill does not expose configurable tool permissions.',
   'tools.builtins.groupName': 'Built-ins',
   'tools.builtins.install': 'Install',
   'tools.builtins.installed': 'Installed',
@@ -2271,164 +2501,169 @@ When I am ___, I need ___
   'tools.builtins.uninstallConfirm.title': 'Uninstall {{name}}',
   'tools.builtins.uninstalled': 'Uninstalled',
   'tools.disabled': 'The current model does not support function calls and cannot use the skill',
-  'tools.klavis.addServer': 'Add Server',
-  'tools.klavis.authCompleted': 'Authentication Completed',
-  'tools.klavis.authFailed': 'Authentication Failed',
-  'tools.klavis.authRequired': 'Authentication Required',
-  'tools.klavis.connect': 'Connect',
-  'tools.klavis.connected': 'Connected',
-  'tools.klavis.disconnect': 'Disconnect',
-  'tools.klavis.disconnected': 'Disconnected',
-  'tools.klavis.error': 'Error',
-  'tools.klavis.groupName': 'Klavis Tools',
-  'tools.klavis.manage': 'Manage Klavis',
-  'tools.klavis.manageTitle': 'Manage Klavis Integration',
-  'tools.klavis.noServers': 'No connected servers',
-  'tools.klavis.notEnabled': 'Klavis service not enabled',
-  'tools.klavis.oauthRequired': 'Please complete OAuth authentication in the new window',
-  'tools.klavis.pendingAuth': 'Pending Authentication',
-  'tools.klavis.serverCreated': 'Server created successfully',
-  'tools.klavis.serverCreatedFailed': 'Failed to create server',
-  'tools.klavis.serverRemoved': 'Server removed',
-  'tools.klavis.servers': 'servers',
+  'tools.composio.addServer': 'Add Server',
+  'tools.composio.authCompleted': 'Authentication Completed',
+  'tools.composio.authFailed': 'Authentication Failed',
+  'tools.composio.authRequired': 'Authentication Required',
+  'tools.composio.connect': 'Connect',
+  'tools.composio.connected': 'Connected',
+  'tools.composio.disconnect': 'Disconnect',
+  'tools.composio.disconnected': 'Disconnected',
+  'tools.composio.error': 'Error',
+  'tools.composio.remove': 'Remove',
+  'tools.composio.removeConfirm.desc':
+    '{{name}} will be permanently removed from your connected services. This action cannot be undone.',
+  'tools.composio.removeConfirm.title': 'Remove {{name}}?',
+  'tools.composio.groupName': 'Composio Tools',
+  'tools.composio.manage': 'Manage Composio',
+  'tools.composio.manageTitle': 'Manage Composio Integration',
+  'tools.composio.noServers': 'No connected servers',
+  'tools.composio.notEnabled': 'Composio service not enabled',
+  'tools.composio.oauthRequired': 'Please complete OAuth authentication in the new window',
+  'tools.composio.pendingAuth': 'Pending Authentication',
+  'tools.composio.reauthorize': 'Re-authorize',
+  'tools.composio.serverCreated': 'Server created successfully',
+  'tools.composio.serverCreatedFailed': 'Failed to create server',
+  'tools.composio.serverRemoved': 'Server removed',
+  'tools.composio.servers': 'servers',
 
-  'tools.klavis.servers.airtable.description':
+  'tools.composio.servers.airtable.description':
     'Airtable is a cloud-based database and spreadsheet platform that combines the flexibility of a spreadsheet with the power of a database, enabling teams to organize, track, and collaborate on projects with customizable views and powerful automation features',
 
-  'tools.klavis.servers.airtable.readme':
+  'tools.composio.servers.airtable.readme':
     'Integrate with Airtable to manage your databases and workflows. Query records, create entries, update data, and automate operations with customizable views and powerful tracking features.',
 
-  'tools.klavis.servers.cal-com.description':
+  'tools.composio.servers.cal-com.description':
     'Cal.com is an open-source scheduling platform that helps you schedule meetings without the back-and-forth emails. Manage event types, bookings, availability, and integrate with calendars for seamless appointment scheduling',
 
-  'tools.klavis.servers.cal-com.readme':
+  'tools.composio.servers.cal-com.readme':
     'Connect to Cal.com to manage your scheduling and appointments. View availability, book meetings, manage event types, and automate your calendar through natural conversation.',
 
-  'tools.klavis.servers.clickup.description':
+  'tools.composio.servers.clickup.description':
     'ClickUp is a comprehensive project management and productivity platform that helps teams organize tasks, manage projects, and collaborate effectively with customizable workflows and powerful tracking features',
 
-  'tools.klavis.servers.clickup.readme':
+  'tools.composio.servers.clickup.readme':
     'Connect to ClickUp to manage tasks, track projects, and organize your work. Create tasks, update statuses, manage custom workflows, and collaborate with your team through natural language commands.',
 
-  'tools.klavis.servers.confluence.description':
+  'tools.composio.servers.confluence.description':
     'Confluence is a team workspace where knowledge and collaboration meet',
 
-  'tools.klavis.servers.confluence.readme':
+  'tools.composio.servers.confluence.readme':
     'Connect to Confluence to access and manage team documentation. Search pages, create content, organize spaces, and build your knowledge base through conversational AI assistance.',
 
-  'tools.klavis.servers.dropbox.description':
+  'tools.composio.servers.dropbox.description':
     'Complete file management solution for Dropbox cloud storage. Upload, download, organize files and folders, manage sharing and collaboration, handle file versions, create file requests, and perform batch operations on your Dropbox files and folders',
 
-  'tools.klavis.servers.dropbox.readme':
+  'tools.composio.servers.dropbox.readme':
     'Integrate with Dropbox to access and manage your files. Upload, download, share files, manage folders, handle file versions, and organize your cloud storage through conversational AI.',
 
-  'tools.klavis.servers.figma.description':
+  'tools.composio.servers.figma.description':
     'Figma is a collaborative interface design tool for web and mobile applications.',
 
-  'tools.klavis.servers.figma.readme':
+  'tools.composio.servers.figma.readme':
     'Connect to Figma to access design files and collaborate on projects. View designs, export assets, browse components, and manage your design workflow through natural conversation.',
 
-  'tools.klavis.servers.github.description': 'Enhanced GitHub MCP Server',
+  'tools.composio.servers.github.description': 'Enhanced GitHub MCP Server',
 
-  'tools.klavis.servers.github.readme':
+  'tools.composio.servers.github.readme':
     'Connect to GitHub to manage repositories, issues, pull requests, and code. Search code, review changes, create branches, and collaborate on software development projects through conversational AI.',
 
-  // Klavis Servers i18n
-  'tools.klavis.servers.gmail.description': 'Gmail is a free email service provided by Google',
+  // Composio Servers i18n
+  'tools.composio.servers.gmail.description': 'Gmail is a free email service provided by Google',
 
-  'tools.klavis.servers.gmail.readme':
+  'tools.composio.servers.gmail.readme':
     'Bring the power of Gmail directly into your AI assistant. Read, compose, and send emails, search your inbox, manage labels, and organize your communications—all through natural conversation.',
 
-  'tools.klavis.servers.google-calendar.description':
+  'tools.composio.servers.google-calendar.description':
     'Google Calendar is a time-management and scheduling calendar service',
 
-  'tools.klavis.servers.google-calendar.readme':
+  'tools.composio.servers.google-calendar.readme':
     'Integrate Google Calendar to view, create, and manage your events seamlessly. Schedule meetings, set reminders, check availability, and coordinate your time—all through natural language commands.',
 
-  'tools.klavis.servers.google-docs.description':
+  'tools.composio.servers.google-docs.description':
     'Google Docs is a word processor included as part of the free, web-based Google Docs Editors suite',
 
-  'tools.klavis.servers.google-docs.readme':
+  'tools.composio.servers.google-docs.readme':
     'Integrate with Google Docs to create, edit, and manage documents. Write content, format text, collaborate in real-time, and access your documents through natural conversation.',
 
-  'tools.klavis.servers.google-drive.description': 'Google Drive is a cloud storage service',
+  'tools.composio.servers.google-drive.description': 'Google Drive is a cloud storage service',
 
-  'tools.klavis.servers.google-drive.readme':
+  'tools.composio.servers.google-drive.readme':
     'Connect to Google Drive to access, organize, and manage your files. Search documents, upload files, share content, and navigate your cloud storage efficiently through AI assistance.',
 
-  'tools.klavis.servers.google-sheets.description':
+  'tools.composio.servers.google-sheets.description':
     'Google Sheets is a web-based spreadsheet application that allows users to create, edit, and collaborate on spreadsheets online',
 
-  'tools.klavis.servers.google-sheets.readme':
+  'tools.composio.servers.google-sheets.readme':
     'Connect to Google Sheets to read, write, and analyze spreadsheet data. Perform calculations, generate reports, create charts, and manage tabular data collaboratively with AI assistance.',
 
-  'tools.klavis.servers.hubspot.description':
+  'tools.composio.servers.hubspot.description':
     'HubSpot is a developer and marketer of software products for inbound marketing, sales, and customer service',
 
-  'tools.klavis.servers.hubspot.readme':
+  'tools.composio.servers.hubspot.readme':
     'Integrate with HubSpot to manage contacts, deals, and marketing campaigns. Access CRM data, track pipelines, automate workflows, and streamline your sales and marketing operations.',
 
-  'tools.klavis.servers.jira.description':
+  'tools.composio.servers.jira.description':
     'Jira is a project management and issue tracking tool developed by Atlassian',
 
-  'tools.klavis.servers.jira.readme':
+  'tools.composio.servers.jira.readme':
     'Integrate with Jira to manage issues, track progress, and organize sprints. Create tickets, update statuses, query project data, and streamline your development workflow through natural conversation.',
 
-  'tools.klavis.servers.notion.description':
+  'tools.composio.servers.notion.description':
     'Notion is a collaborative productivity and note-taking application',
 
-  'tools.klavis.servers.notion.readme':
+  'tools.composio.servers.notion.readme':
     'Connect to Notion to access and manage your workspace. Create pages, search content, update databases, and organize your knowledge base—all through natural conversation with your AI assistant.',
 
-  'tools.klavis.servers.onedrive.description':
+  'tools.composio.servers.onedrive.description':
     'OneDrive is a file hosting service and synchronization service operated by Microsoft',
 
-  'tools.klavis.servers.onedrive.readme':
+  'tools.composio.servers.onedrive.readme':
     'Connect to OneDrive to access and manage your Microsoft cloud files. Upload, download, share files, organize folders, and collaborate on documents through AI-powered assistance.',
 
-  'tools.klavis.servers.outlook-mail.description':
+  'tools.composio.servers.outlook-mail.description':
     'Outlook Mail is a web-based suite of webmail, contacts, tasks, and calendaring services from Microsoft.',
 
-  'tools.klavis.servers.outlook-mail.readme':
+  'tools.composio.servers.outlook-mail.readme':
     'Integrate with Outlook Mail to read, send, and manage your Microsoft emails. Search messages, compose emails, manage folders, and organize your inbox through natural conversation.',
 
-  'tools.klavis.servers.salesforce.description':
+  'tools.composio.servers.salesforce.description':
     "Salesforce is the world's leading customer relationship management (CRM) platform that helps businesses connect with customers, partners, and potential customers",
 
-  'tools.klavis.servers.salesforce.readme':
+  'tools.composio.servers.salesforce.readme':
     'Connect to Salesforce to manage customer relationships and sales data. Query records, update opportunities, track leads, and automate your CRM workflows through natural language commands.',
 
-  'tools.klavis.servers.slack.description':
+  'tools.composio.servers.slack.description':
     'Slack is a messaging app for business that connects people to the information they need',
 
-  'tools.klavis.servers.slack.readme':
+  'tools.composio.servers.slack.readme':
     'Integrate with Slack to send messages, search conversations, and manage channels. Connect with your team, automate communication workflows, and access workspace information through natural language.',
 
-  'tools.klavis.servers.supabase.description': 'Supabase official MCP Server',
+  'tools.composio.servers.supabase.description': 'Supabase official MCP Server',
 
-  'tools.klavis.servers.supabase.readme':
+  'tools.composio.servers.supabase.readme':
     'Integrate with Supabase to manage your database and backend services. Query data, manage authentication, handle storage, and interact with your application backend through natural conversation.',
 
-  'tools.klavis.servers.whatsapp.description':
+  'tools.composio.servers.whatsapp.description':
     'WhatsApp Business API integration that enables sending text messages, media, and managing conversations with customers. Perfect for customer support, marketing campaigns, and automated messaging workflows through the official WhatsApp Business platform.',
 
-  'tools.klavis.servers.whatsapp.readme':
+  'tools.composio.servers.whatsapp.readme':
     'Integrate with WhatsApp Business to send messages, manage conversations, and engage with customers. Automate messaging workflows and handle communications through conversational AI.',
 
-  'tools.klavis.servers.youtube.description':
+  'tools.composio.servers.youtube.description':
     'YouTube is a video-sharing platform where users can upload, share, and discover content. Access video information, transcripts, and metadata programmatically.',
 
-  'tools.klavis.servers.youtube.readme':
+  'tools.composio.servers.youtube.readme':
     'Connect to YouTube to search videos, access transcripts, and retrieve video information. Analyze content, extract metadata, and discover videos through natural conversation.',
 
-  'tools.klavis.servers.zendesk.description': 'Zendesk is a customer service software company',
+  'tools.composio.servers.zendesk.description': 'Zendesk is a customer service software company',
 
-  'tools.klavis.servers.zendesk.readme':
+  'tools.composio.servers.zendesk.readme':
     'Integrate with Zendesk to manage support tickets and customer interactions. Create, update, and track support requests, access customer data, and streamline your support operations.',
 
-  'tools.klavis.tools': 'tools',
+  'tools.composio.tools': 'tools',
 
-  'tools.klavis.verifyAuth': 'I have completed authentication',
+  'tools.composio.verifyAuth': 'I have completed authentication',
 
   'tools.lobehubSkill.authorize': 'Authorize',
 
@@ -2463,6 +2698,10 @@ When I am ___, I need ___
     'Notion is a collaborative productivity and note-taking application.',
   'tools.lobehubSkill.providers.notion.readme':
     'Connect to Notion to access and manage your workspace. Create pages, search content, update databases, and organize your knowledge base—all through natural conversation with your AI assistant.',
+  'tools.lobehubSkill.providers.posthog.description':
+    'PostHog is an open-source product analytics platform for analyzing events, funnels, cohorts, feature flags, experiments, and user behavior.',
+  'tools.lobehubSkill.providers.posthog.readme':
+    'Connect to PostHog to query product analytics, inspect dashboards, review feature flags and experiments, and understand user behavior through natural conversation with your AI assistant.',
   'tools.lobehubSkill.providers.twitter.description':
     'X (Twitter) is a social media platform for sharing real-time updates, news, and engaging with your audience through posts, replies, and direct messages.',
   'tools.lobehubSkill.providers.twitter.readme':
