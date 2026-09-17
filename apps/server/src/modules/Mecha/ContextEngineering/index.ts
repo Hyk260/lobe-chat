@@ -122,8 +122,10 @@ export const serverMessagesEngine = async ({
   modelKnowledgeCutoff,
   provider,
   systemRole,
+  agentIdentity,
   inputTemplate,
   enableAgentMode,
+  enableExpertise,
   enableHistoryCount,
   forceFinish,
   historyCount,
@@ -140,8 +142,10 @@ export const serverMessagesEngine = async ({
   agentBuilderContext,
   agentGroup,
   botPlatformContext,
+  workspaceContext,
   discordContext,
   evalContext,
+  expertise,
   agentManagementContext,
   groupAgentBuilderContext,
   onboardingContext,
@@ -163,7 +167,9 @@ export const serverMessagesEngine = async ({
 
     // Agent configuration
     enableAgentMode,
+    enableExpertise,
     enableHistoryCount,
+    expertise,
 
     // Server-side file access URLs resolve to stable file-proxy URLs in production.
     fileContext: { enabled: true, includeFileUrl: true },
@@ -199,6 +205,7 @@ export const serverMessagesEngine = async ({
     provider,
     planTodo,
     systemRole,
+    agentIdentity,
 
     // Timezone for system date provider
     timezone: userTimezone,
@@ -240,6 +247,7 @@ export const serverMessagesEngine = async ({
     ...(agentBuilderContext && { agentBuilderContext }),
     ...(agentGroup && { agentGroup }),
     ...(botPlatformContext && { botPlatformContext }),
+    ...(workspaceContext && { workspaceContext }),
     ...(discordContext && { discordContext }),
     ...(evalContext && { evalContext }),
     ...(onboardingContext && { onboardingContext }),
